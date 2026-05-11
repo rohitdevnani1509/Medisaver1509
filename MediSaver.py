@@ -1,23 +1,79 @@
+# app.py
+# AI Medicine Alternative Finder with Frontend UI
+# Run using:
+# pip install streamlit requests pandas
+# streamlit run app.py
+
+import streamlit as st
 import requests
-import webbrowser
+import pandas as pd
 from difflib import SequenceMatcher
 
-# ----------------------------
-# CONFIG
-# ----------------------------
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 
-FDA_API = "https://api.fda.gov/drug/ndc.json"
+st.set_page_config(
+    page_title="AI Medicine Alternative Finder",
+    page_icon="💊",
+    layout="wide"
+)
 
-PHARMACY_LINKS = {
-    "1mg": "https://www.1mg.com/search/all?name={}",
-    "NetMeds": "https://www.netmeds.com/catalogsearch/result/{}",
-    "PharmEasy": "https://pharmeasy.in/search/all?name={}"
+# -----------------------------
+# CUSTOM CSS
+# -----------------------------
+
+st.markdown("""
+<style>
+.main {
+    background-color: #f5f7fa;
 }
 
-# ----------------------------
-# SAMPLE PRICE DATABASE
-# (Demo AI price comparison)
-# ----------------------------
+.title {
+    font-size: 42px;
+    font-weight: bold;
+    color: #0f172a;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #475569;
+}
+
+.med-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+}
+
+.price {
+    color: green;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.buy-btn {
+    text-decoration: none;
+    background: #2563eb;
+    color: white !important;
+    padding: 10px 18px;
+    border-radius: 10px;
+    margin-right: 10px;
+}
+
+.footer {
+    text-align:center;
+    margin-top:50px;
+    color:gray;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------
+# DATABASE
+# -----------------------------
 
 PRICE_DB = {
     "Crocin": 35,
@@ -32,16 +88,26 @@ PRICE_DB = {
     "Lipitor": 250
 }
 
-# ----------------------------
+FDA_API = "https://api.fda.gov/drug/ndc.json"
+
+PHARMACY_LINKS = {
+    "1mg": "https://www.1mg.com/search/all?name={}",
+    "NetMeds": "https://www.netmeds.com/catalogsearch/result/{}",
+    "PharmEasy": "https://pharmeasy.in/search/all?name={}"
+}
+
+# -----------------------------
 # FUNCTIONS
-# ----------------------------
+# -----------------------------
+
+def similarity(a, b):
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 def fetch_medicine_data(medicine_name):
-    """
-    Fetch medicine data from openFDA
-    """
+
     try:
-        url = f"{FDA_API}?search=brand_name:{medicine_name}&limit=5"
+        url = f"{FDA_API}?search=brand_name:{medicine_name}&limit=1"
+
         response = requests.get(url)
 
         if response.status_code != 200:
@@ -52,24 +118,14 @@ def fetch_medicine_data(medicine_name):
         if "results" not in data:
             return None
 
-        return data["results"]
+        return data["results"][0]
 
-    except Exception as e:
-        print("API Error:", e)
+    except:
         return None
 
-
-def similarity(a, b):
-    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
-
-
 def find_cheaper_alternatives(medicine_name):
-    """
-    AI-like matching for cheaper alternatives
-    """
 
     if medicine_name not in PRICE_DB:
-        print("\nMedicine not found in local pricing database.")
         return []
 
     original_price = PRICE_DB[medicine_name]
@@ -81,18 +137,16 @@ def find_cheaper_alternatives(medicine_name):
         if med.lower() == medicine_name.lower():
             continue
 
-        # AI-like similarity logic
         score = similarity(medicine_name, med)
 
-        # cheaper medicine condition
         if price < original_price:
+
             alternatives.append({
                 "name": med,
                 "price": price,
-                "score": score
+                "score": round(score, 2)
             })
 
-    # sort by similarity + cheapest
     alternatives = sorted(
         alternatives,
         key=lambda x: (-x["score"], x["price"])
@@ -100,99 +154,142 @@ def find_cheaper_alternatives(medicine_name):
 
     return alternatives[:5]
 
-
-def generate_buy_links(medicine_name):
-    """
-    Generate online purchase/search links
-    """
+def generate_links(medicine):
 
     links = {}
 
     for pharmacy, url in PHARMACY_LINKS.items():
-        links[pharmacy] = url.format(medicine_name.replace(" ", "%20"))
+        links[pharmacy] = url.format(
+            medicine.replace(" ", "%20")
+        )
 
     return links
 
+# -----------------------------
+# HEADER
+# -----------------------------
 
-def print_links(links):
-    for pharmacy, link in links.items():
-        print(f"{pharmacy}: {link}")
+st.markdown(
+    '<div class="title">💊 AI Medicine Alternative Finder</div>',
+    unsafe_allow_html=True
+)
 
+st.markdown(
+    '<div class="subtitle">Find cheaper medicine alternatives instantly using AI logic.</div>',
+    unsafe_allow_html=True
+)
 
-# ----------------------------
-# MAIN APP
-# ----------------------------
+st.write("")
 
-def main():
+# -----------------------------
+# SEARCH SECTION
+# -----------------------------
 
-    print("\n==============================")
-    print(" AI Medicine Alternative Finder ")
-    print("==============================\n")
+medicine_name = st.text_input(
+    "Enter Medicine Name",
+    placeholder="Example: Crocin"
+)
 
-    medicine_name = input("Enter medicine name: ").strip()
+search_btn = st.button("🔍 Find Alternatives")
 
-    print("\nSearching medicine details...\n")
+# -----------------------------
+# SEARCH LOGIC
+# -----------------------------
+
+if search_btn and medicine_name:
+
+    st.subheader("Medicine Information")
 
     medicine_data = fetch_medicine_data(medicine_name)
 
     if medicine_data:
-        try:
-            result = medicine_data[0]
 
-            brand = result.get("brand_name", "N/A")
-            generic = result.get("generic_name", "N/A")
-            manufacturer = result.get("labeler_name", "N/A")
+        brand = medicine_data.get("brand_name", "N/A")
+        generic = medicine_data.get("generic_name", "N/A")
+        manufacturer = medicine_data.get("labeler_name", "N/A")
 
-            print("Medicine Information")
-            print("---------------------")
-            print("Brand Name :", brand)
-            print("Generic    :", generic)
-            print("Manufacturer:", manufacturer)
+        info_df = pd.DataFrame({
+            "Field": ["Brand", "Generic", "Manufacturer"],
+            "Value": [brand, generic, manufacturer]
+        })
 
-        except Exception:
-            print("Medicine information found but incomplete.")
+        st.table(info_df)
 
     else:
-        print("No FDA data found.")
+        st.warning("Medicine information not found from FDA API.")
 
-    print("\nFinding cheaper alternatives using AI...\n")
+    # -----------------------------
+    # ALTERNATIVES
+    # -----------------------------
+
+    st.subheader("💰 Cheaper Alternatives")
 
     alternatives = find_cheaper_alternatives(medicine_name)
 
     if not alternatives:
-        print("No cheaper alternatives found.")
-        return
+        st.error("No cheaper alternatives found.")
+    else:
 
-    print("Cheaper Alternatives")
-    print("----------------------")
+        for alt in alternatives:
 
-    for idx, alt in enumerate(alternatives, start=1):
+            links = generate_links(alt["name"])
 
-        print(f"\n{idx}. {alt['name']}")
-        print(f"   Estimated Price: ₹{alt['price']}")
-        print(f"   Similarity Score: {round(alt['score'], 2)}")
+            st.markdown(f"""
+            <div class="med-card">
+                <h2>{alt['name']}</h2>
+                <div class="price">₹{alt['price']}</div>
+                <p>Similarity Score: {alt['score']}</p>
 
-        print("\n   Buy Online:")
+                <a class="buy-btn" href="{links['1mg']}" target="_blank">
+                Buy on 1mg
+                </a>
 
-        links = generate_buy_links(alt['name'])
-        print_links(links)
+                <a class="buy-btn" href="{links['NetMeds']}" target="_blank">
+                Buy on NetMeds
+                </a>
 
-    # Optional auto-open
-    open_browser = input("\nOpen first alternative in browser? (y/n): ")
+                <a class="buy-btn" href="{links['PharmEasy']}" target="_blank">
+                Buy on PharmEasy
+                </a>
+            </div>
+            """, unsafe_allow_html=True)
 
-    if open_browser.lower() == 'y':
-        first_med = alternatives[0]["name"]
-        links = generate_buy_links(first_med)
+# -----------------------------
+# SIDEBAR
+# -----------------------------
 
-        first_link = list(links.values())[0]
+st.sidebar.title("📌 About")
 
-        webbrowser.open(first_link)
-        print("Browser opened.")
+st.sidebar.info(
+    """
+    This AI medicine finder helps users:
+    
+    ✅ Find cheaper alternatives  
+    ✅ Compare medicine prices  
+    ✅ Get pharmacy links  
+    ✅ Save medicine costs  
+    """
+)
 
+st.sidebar.title("🛠 Tech Stack")
 
-# ----------------------------
-# ENTRY
-# ----------------------------
+st.sidebar.write("""
+- Python
+- Streamlit
+- Requests
+- Pandas
+- AI Similarity Matching
+""")
 
-if __name__ == "__main__":
-    main()
+# -----------------------------
+# FOOTER
+# -----------------------------
+
+st.markdown(
+    """
+    <div class="footer">
+    Made with ❤️ using Python + Streamlit
+    </div>
+    """,
+    unsafe_allow_html=True
+)
