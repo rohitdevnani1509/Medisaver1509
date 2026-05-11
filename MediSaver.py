@@ -1,12 +1,12 @@
 # ============================================================
 # MediSaver.py
-# Dynamic Medicine Alternative Finder
+# Working Dynamic Medicine Alternative Finder
 # Google Search Results + Purchase Links
-# Runtime SerpAPI Key Input
+# Uses SerpAPI at Runtime
 # ============================================================
 
 # INSTALL:
-# pip install streamlit requests
+# pip install -r requirements.txt
 
 # RUN:
 # streamlit run MediSaver.py
@@ -39,7 +39,7 @@ st.markdown("""
 }
 
 .title {
-    font-size: 48px;
+    font-size: 52px;
     font-weight: bold;
     color: #0f172a;
 }
@@ -70,6 +70,14 @@ st.markdown("""
     font-weight: 500;
 }
 
+.debug-box {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+    color: #856404;
+}
+
 .footer {
     text-align: center;
     margin-top: 50px;
@@ -98,7 +106,7 @@ st.markdown(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("🔑 SerpAPI Key")
+st.sidebar.title("🔑 SerpAPI Configuration")
 
 SERP_API_KEY = st.sidebar.text_input(
     "Enter SerpAPI Key",
@@ -133,7 +141,7 @@ def generate_purchase_links(medicine):
         "NetMeds":
         f"https://www.netmeds.com/catalogsearch/result/{med}",
 
-        "Apollo":
+        "Apollo Pharmacy":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
         "Google Shopping":
@@ -144,7 +152,7 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# GOOGLE SEARCH FUNCTION
+# SERPAPI GOOGLE SEARCH
 # ============================================================
 
 def search_alternatives(
@@ -154,7 +162,8 @@ def search_alternatives(
 
     url = "https://serpapi.com/search.json"
 
-    query = f"{medicine_name} generic substitute medicine"
+    # Better query for medicine alternatives
+    query = f"{medicine_name} substitute"
 
     params = {
 
@@ -182,10 +191,34 @@ def search_alternatives(
             params=params
         )
 
+        # ====================================================
+        # DEBUG STATUS
+        # ====================================================
+
+        st.write("HTTP Status:", response.status_code)
+
         data = response.json()
 
         # ====================================================
-        # ORGANIC GOOGLE RESULTS
+        # DEBUG RESPONSE
+        # ====================================================
+
+        with st.expander("🔍 Debug API Response"):
+
+            st.json(data)
+
+        # ====================================================
+        # HANDLE API ERRORS
+        # ====================================================
+
+        if "error" in data:
+
+            st.error(f"SerpAPI Error: {data['error']}")
+
+            return []
+
+        # ====================================================
+        # ORGANIC RESULTS
         # ====================================================
 
         if "organic_results" in data:
@@ -224,7 +257,7 @@ def search_alternatives(
 
 medicine_name = st.text_input(
     "Enter Medicine Name",
-    placeholder="Example: Crocin"
+    placeholder="Example: Calpol 650"
 )
 
 search_btn = st.button("🔍 Find Alternatives")
@@ -246,13 +279,17 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Searching Google for alternative medicines..."
+            "Searching Google for alternate medicines..."
         ):
 
             results = search_alternatives(
                 medicine_name,
                 SERP_API_KEY
             )
+
+        # ====================================================
+        # RESULTS
+        # ====================================================
 
         st.subheader("💊 Google Search Results")
 
@@ -261,6 +298,21 @@ if search_btn:
             st.warning(
                 "No alternate medicines found."
             )
+
+            st.markdown("""
+            <div class="debug-box">
+
+            Possible reasons:
+
+            • Invalid SerpAPI key  
+            • Free plan exhausted  
+            • Google returned no organic results  
+            • Query returned limited data  
+
+            Try another medicine name.
+
+            </div>
+            """, unsafe_allow_html=True)
 
         else:
 
@@ -319,11 +371,13 @@ st.sidebar.info("""
 ✅ Runtime SerpAPI Key  
 ✅ Dynamic Google Search  
 ✅ Live Google Results  
-✅ Medicine Alternative Search  
+✅ Medicine Substitute Search  
 ✅ 1mg Links  
 ✅ PharmEasy Links  
 ✅ Truemeds Links  
+✅ Google Shopping Links  
 ✅ Streamlit Frontend UI  
+✅ API Debug Response  
 
 """)
 
