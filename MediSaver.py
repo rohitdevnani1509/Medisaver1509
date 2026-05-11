@@ -2,6 +2,11 @@
 # MediSaver.py
 # Dynamic Medicine Alternative Finder
 # Google Search + SerpAPI + Streamlit UI
+# Includes:
+# - 1mg
+# - PharmEasy
+# - Truemeds
+# Purchase Links
 # ============================================================
 
 # INSTALL:
@@ -115,30 +120,38 @@ https://serpapi.com/users/sign_up
 
 def extract_possible_medicines(text):
 
-    # Remove special chars
     text = re.sub(r'[^a-zA-Z0-9\\s-]', ' ', text)
 
     words = text.split()
 
     medicines = []
 
+    ignored_words = [
+        "medicine",
+        "tablet",
+        "tablets",
+        "capsule",
+        "generic",
+        "substitute",
+        "alternative",
+        "alternatives",
+        "price",
+        "uses",
+        "side",
+        "effects",
+        "dose",
+        "dosage",
+        "mg",
+        "strip",
+        "buy",
+        "online"
+    ]
+
     for word in words:
 
         if len(word) > 3:
 
-            if word.lower() not in [
-                "medicine",
-                "tablets",
-                "capsule",
-                "generic",
-                "substitute",
-                "alternative",
-                "mg",
-                "uses",
-                "price",
-                "side",
-                "effects"
-            ]:
+            if word.lower() not in ignored_words:
 
                 medicines.append(word)
 
@@ -255,23 +268,29 @@ def generate_purchase_links(medicine):
 
     return {
 
+        # GOOGLE
         "Google Shopping":
         f"https://www.google.com/search?tbm=shop&q={med}",
 
-        "Amazon":
-        f"https://www.amazon.in/s?k={med}+medicine",
-
+        # INDIA PHARMACY SITES
         "1mg":
         f"https://www.1mg.com/search/all?name={med}",
-
-        "NetMeds":
-        f"https://www.netmeds.com/catalogsearch/result/{med}",
 
         "PharmEasy":
         f"https://pharmeasy.in/search/all?name={med}",
 
-        "Apollo":
-        f"https://www.apollopharmacy.in/search-medicines/{med}"
+        "Truemeds":
+        f"https://www.truemeds.in/search/{med}",
+
+        "NetMeds":
+        f"https://www.netmeds.com/catalogsearch/result/{med}",
+
+        "Apollo Pharmacy":
+        f"https://www.apollopharmacy.in/search-medicines/{med}",
+
+        # GLOBAL
+        "Amazon":
+        f"https://www.amazon.in/s?k={med}+medicine"
     }
 
 # ============================================================
@@ -402,7 +421,9 @@ st.sidebar.info("""
 ✅ Dynamic Google Search  
 ✅ No Hardcoded Medicines  
 ✅ Live Medicine Alternatives  
-✅ Purchase Links  
+✅ 1mg Purchase Links  
+✅ PharmEasy Links  
+✅ Truemeds Links  
 ✅ Streamlit Frontend UI  
 
 """)
