@@ -1,8 +1,10 @@
+# MediSaver.py (Improved Version)
+
+```python
 # ============================================================
 # MediSaver.py
-# Working Dynamic Medicine Alternative Finder
-# Google Search Results + Purchase Links
-# Uses SerpAPI at Runtime
+# Improved Medicine Alternative Finder
+# Clean Streamlit UI + Proper HTML Rendering
 # ============================================================
 
 # INSTALL:
@@ -70,12 +72,17 @@ st.markdown("""
     font-weight: 500;
 }
 
-.debug-box {
-    background: #fff3cd;
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 20px;
-    color: #856404;
+.alt-caption {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.alt-text {
+    font-size: 16px;
+    color: #475569;
+    line-height: 1.7;
 }
 
 .footer {
@@ -98,8 +105,16 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">Find alternate medicines dynamically from Google Search using SerpAPI.</div>',
+    '<div class="subtitle">Find alternate medicines dynamically using SerpAPI.</div>',
     unsafe_allow_html=True
+)
+
+# ============================================================
+# DISCLAIMER
+# ============================================================
+
+st.warning(
+    "⚠️ This app does NOT provide medical advice. Always consult a doctor or pharmacist before using substitute medicines."
 )
 
 # ============================================================
@@ -122,6 +137,7 @@ https://serpapi.com/users/sign_up
 # ============================================================
 # PURCHASE LINKS
 # ============================================================
+
 
 def generate_purchase_links(medicine):
 
@@ -152,18 +168,16 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# SERPAPI GOOGLE SEARCH
+# SERPAPI SEARCH
 # ============================================================
 
-def search_alternatives(
-    medicine_name,
-    api_key
-):
+
+@st.cache_data(ttl=3600)
+def search_alternatives(medicine_name, api_key):
 
     url = "https://serpapi.com/search.json"
 
-    # Better query for medicine alternatives
-    query = f"{medicine_name} substitute"
+    query = f"{medicine_name} alternative generic substitute"
 
     params = {
 
@@ -188,38 +202,23 @@ def search_alternatives(
 
         response = requests.get(
             url,
-            params=params
+            params=params,
+            timeout=15
         )
 
-        # ====================================================
-        # DEBUG STATUS
-        # ====================================================
+        response.raise_for_status()
 
-        st.write("HTTP Status:", response.status_code)
-
-        data = response.json()
-
-        # ====================================================
-        # DEBUG RESPONSE
-        # ====================================================
-
-        with st.expander("🔍 Debug API Response"):
-
-            st.json(data)
-
-        # ====================================================
-        # HANDLE API ERRORS
-        # ====================================================
+        try:
+            data = response.json()
+        except:
+            st.error("Invalid API response")
+            return []
 
         if "error" in data:
 
             st.error(f"SerpAPI Error: {data['error']}")
 
             return []
-
-        # ====================================================
-        # ORGANIC RESULTS
-        # ====================================================
 
         if "organic_results" in data:
 
@@ -245,22 +244,24 @@ def search_alternatives(
 
         return alternatives
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
 
         st.error(f"Search Error: {e}")
 
         return []
 
 # ============================================================
-# USER INPUT
+# USER INPUT FORM
 # ============================================================
 
-medicine_name = st.text_input(
-    "Enter Medicine Name",
-    placeholder="Example: Calpol 650"
-)
+with st.form("medicine_form"):
 
-search_btn = st.button("🔍 Find Alternatives")
+    medicine_name = st.text_input(
+        "Enter Medicine Name",
+        placeholder="Example: Calpol 650"
+    )
+
+    search_btn = st.form_submit_button("🔍 Find Alternatives")
 
 # ============================================================
 # MAIN LOGIC
@@ -279,7 +280,7 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Searching Google for alternate medicines..."
+            "Searching for alternate medicines..."
         ):
 
             results = search_alternatives(
@@ -287,32 +288,13 @@ if search_btn:
                 SERP_API_KEY
             )
 
-        # ====================================================
-        # RESULTS
-        # ====================================================
-
-        st.subheader("💊 AI Search Results for cheaper alternates")
+        st.subheader("💊 Alternative Medicines")
 
         if not results:
 
             st.warning(
                 "No alternate medicines found."
             )
-
-            st.markdown("""
-            <div class="debug-box">
-
-            Possible reasons:
-
-            • Invalid SerpAPI key  
-            • Free plan exhausted  
-            • Google returned no organic results  
-            • Query returned limited data  
-
-            Try another medicine name.
-
-            </div>
-            """, unsafe_allow_html=True)
 
         else:
 
@@ -321,44 +303,52 @@ if search_btn:
                 st.markdown(f"""
                 <div class="card">
 
-                    <h2>{result['title']}</h2>
+                    <div class="alt-caption">
+                        💊 Alternatives
+                    </div>
 
-                    <p>{result['snippet']}</p>
+                    <h3>
+                        {result['title']}
+                    </h3>
 
-                    <a class="buy-btn"
-                       href="{result['link']}"
-                       target="_blank">
-
-                       🔍 Open Google Result
-
-                    </a>
+                    <p class="alt-text">
+                        {result['snippet']}
+                    </p>
 
                 </div>
                 """, unsafe_allow_html=True)
 
-                # =============================================
-                # PURCHASE LINKS
-                # =============================================
-
-                st.markdown("### 🛒 Purchase Links")
-
-                links = generate_purchase_links(
-                    medicine_name
+                st.link_button(
+                    "🔍 Open Google Result",
+                    result['link']
                 )
 
-                for site, link in links.items():
+                st.markdown("<br>", unsafe_allow_html=True)
 
-                    st.markdown(f"""
-                    <a class="buy-btn"
-                       href="{link}"
-                       target="_blank">
+            # ====================================================
+            # PURCHASE LINKS
+            # ====================================================
 
-                       Buy on {site}
+            st.subheader("🛒 Purchase Links")
 
-                    </a>
-                    """, unsafe_allow_html=True)
+            links = generate_purchase_links(
+                medicine_name
+            )
 
-                st.markdown("<hr>", unsafe_allow_html=True)
+            cols = st.columns(3)
+
+            idx = 0
+
+            for site, link in links.items():
+
+                with cols[idx % 3]:
+
+                    st.link_button(
+                        f"Buy on {site}",
+                        link
+                    )
+
+                idx += 1
 
 # ============================================================
 # SIDEBAR FEATURES
@@ -368,16 +358,15 @@ st.sidebar.title("📌 Features")
 
 st.sidebar.info("""
 
-✅ Runtime SerpAPI Key  
-✅ Dynamic Google Search  
-✅ Live Google Results  
-✅ Medicine Substitute Search  
-✅ 1mg Links  
-✅ PharmEasy Links  
-✅ Truemeds Links  
-✅ Google Shopping Links  
-✅ Streamlit Frontend UI  
-✅ API Debug Response  
+✅ Proper Streamlit UI Rendering
+✅ No Raw HTML Tags
+✅ Runtime SerpAPI Key
+✅ Dynamic Google Search
+✅ Purchase Links
+✅ Cached API Calls
+✅ Better Error Handling
+✅ Clean Alternative Cards
+✅ Responsive UI
 
 """)
 
@@ -392,3 +381,5 @@ Made with ❤️ using Python + Streamlit + SerpAPI
 
 </div>
 """, unsafe_allow_html=True)
+
+```
