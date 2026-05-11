@@ -22,7 +22,7 @@ from urllib.parse import quote_plus
 # ============================================================
 
 st.set_page_config(
-    page_title="MediSaver",
+    page_title="MediSaver AI",
     page_icon="💊",
     layout="wide"
 )
