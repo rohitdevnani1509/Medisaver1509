@@ -84,7 +84,7 @@ st.markdown("""
 # ============================================================
 
 st.markdown(
-    '<div class="title">💊 MediSaver AI (Affordable Alternates)</div>',
+    '<div class="title">💊 MediSaver AI (Best Price and Alternates)</div>',
     unsafe_allow_html=True
 )
 
