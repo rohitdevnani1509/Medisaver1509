@@ -1,8 +1,15 @@
+# ============================================================
 # app.py
-# ============================================
-# AI Medicine Alternative Finder
-# Full Single File Project
-# ============================================
+# AI Medicine Alternative Finder with Full Frontend UI
+# Includes:
+# - Medicine Search
+# - FDA API Integration
+# - AI-style Alternative Suggestions
+# - Cheaper Medicine Detection
+# - Product Purchase Links
+# - Global Pharmacy Search Links
+# - Streamlit Frontend UI
+# ============================================================
 
 # INSTALL:
 # pip install streamlit requests pandas
@@ -10,14 +17,16 @@
 # RUN:
 # streamlit run app.py
 
+# ============================================================
+
 import streamlit as st
 import requests
 import pandas as pd
 from difflib import SequenceMatcher
 
-# ============================================
+# ============================================================
 # PAGE CONFIG
-# ============================================
+# ============================================================
 
 st.set_page_config(
     page_title="AI Medicine Alternative Finder",
@@ -25,15 +34,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# ============================================
+# ============================================================
 # CUSTOM CSS
-# ============================================
+# ============================================================
 
 st.markdown("""
 <style>
 
 .main {
-    background-color: #f4f7fb;
+    background-color: #f5f7fb;
 }
 
 .title {
@@ -45,7 +54,7 @@ st.markdown("""
 .subtitle {
     font-size: 18px;
     color: #475569;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
 
 .card {
@@ -53,20 +62,20 @@ st.markdown("""
     padding: 25px;
     border-radius: 18px;
     margin-bottom: 25px;
-    box-shadow: 0px 5px 15px rgba(0,0,0,0.08);
+    box-shadow: 0px 5px 18px rgba(0,0,0,0.08);
 }
 
 .price {
     color: green;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: bold;
 }
 
-.site {
+.site-box {
     background: #eff6ff;
     padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 12px;
+    border-radius: 12px;
+    margin-bottom: 15px;
 }
 
 .buy-btn {
@@ -75,59 +84,70 @@ st.markdown("""
     color: white !important;
     padding: 10px 18px;
     border-radius: 10px;
+    margin-right: 10px;
     display: inline-block;
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .footer {
     text-align: center;
-    color: gray;
     margin-top: 50px;
+    color: gray;
     padding: 20px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================
-# DATABASE
-# ============================================
+# ============================================================
+# MEDICINE DATABASE
+# ============================================================
 
 PRICE_DB = {
+
     "Crocin": 35,
     "Dolo 650": 28,
     "Paracetamol": 12,
     "Calpol": 30,
+
     "Azithromycin": 65,
     "Azee": 120,
+
     "Metformin": 22,
     "Glycomet": 110,
+
     "Atorvastatin": 40,
     "Lipitor": 250,
+
     "Cetirizine": 18,
     "Zyrtec": 120,
+
     "Amoxicillin": 55,
-    "Augmentin": 210
+    "Augmentin": 210,
+
+    "Ibuprofen": 20,
+    "Brufen": 90
 }
 
-# ============================================
-# API
-# ============================================
+# ============================================================
+# FDA API
+# ============================================================
 
 FDA_API = "https://api.fda.gov/drug/ndc.json"
 
-# ============================================
+# ============================================================
 # FUNCTIONS
-# ============================================
+# ============================================================
 
 def similarity(a, b):
+
     return SequenceMatcher(
         None,
         a.lower(),
         b.lower()
     ).ratio()
 
-# --------------------------------------------
+# ------------------------------------------------------------
 
 def fetch_medicine_data(medicine_name):
 
@@ -150,7 +170,7 @@ def fetch_medicine_data(medicine_name):
     except:
         return None
 
-# --------------------------------------------
+# ------------------------------------------------------------
 
 def find_cheaper_alternatives(medicine_name):
 
@@ -183,52 +203,88 @@ def find_cheaper_alternatives(medicine_name):
 
     return alternatives[:5]
 
-# --------------------------------------------
+# ------------------------------------------------------------
 
 def generate_global_links(medicine):
 
-    medicine_encoded = medicine.replace(" ", "%20")
+    medicine_encoded = medicine.replace(" ", "+")
 
     links = {
 
-        # INDIA
+        # =====================================================
+        # INDIA PHARMACY LINKS
+        # =====================================================
+
         "1mg":
-        f"https://www.1mg.com/search/all?name={medicine_encoded}",
+        {
+            "product":
+            f"https://www.1mg.com/search/all?name={medicine_encoded}"
+        },
 
         "NetMeds":
-        f"https://www.netmeds.com/catalogsearch/result/{medicine_encoded}",
+        {
+            "product":
+            f"https://www.netmeds.com/catalogsearch/result/{medicine_encoded}"
+        },
 
         "PharmEasy":
-        f"https://pharmeasy.in/search/all?name={medicine_encoded}",
+        {
+            "product":
+            f"https://pharmeasy.in/search/all?name={medicine_encoded}"
+        },
 
         "Apollo Pharmacy":
-        f"https://www.apollopharmacy.in/search-medicines/{medicine_encoded}",
+        {
+            "product":
+            f"https://www.apollopharmacy.in/search-medicines/{medicine_encoded}"
+        },
 
-        # GLOBAL
+        # =====================================================
+        # GLOBAL LINKS
+        # =====================================================
+
         "Amazon":
-        f"https://www.amazon.in/s?k={medicine_encoded}+medicine",
-
-        "Google Search":
-        f"https://www.google.com/search?q=buy+{medicine_encoded}+medicine+online",
+        {
+            "product":
+            f"https://www.amazon.in/s?k={medicine_encoded}+medicine"
+        },
 
         "GoodRx":
-        f"https://www.goodrx.com/search?q={medicine_encoded}",
+        {
+            "product":
+            f"https://www.goodrx.com/search?q={medicine_encoded}"
+        },
 
         "Walgreens":
-        f"https://www.walgreens.com/search/results.jsp?Ntt={medicine_encoded}",
+        {
+            "product":
+            f"https://www.walgreens.com/search/results.jsp?Ntt={medicine_encoded}"
+        },
 
         "CVS Pharmacy":
-        f"https://www.cvs.com/search/?searchTerm={medicine_encoded}",
+        {
+            "product":
+            f"https://www.cvs.com/search/?searchTerm={medicine_encoded}"
+        },
 
         "eBay":
-        f"https://www.ebay.com/sch/i.html?_nkw={medicine_encoded}+medicine"
+        {
+            "product":
+            f"https://www.ebay.com/sch/i.html?_nkw={medicine_encoded}+medicine"
+        },
+
+        "Google Search":
+        {
+            "product":
+            f"https://www.google.com/search?q=buy+{medicine_encoded}+medicine+online"
+        }
     }
 
     return links
 
-# ============================================
+# ============================================================
 # HEADER
-# ============================================
+# ============================================================
 
 st.markdown(
     '<div class="title">💊 AI Medicine Alternative Finder</div>',
@@ -236,13 +292,13 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">Find cheaper alternative medicines using AI logic and purchase them online globally.</div>',
+    '<div class="subtitle">Find cheaper medicine alternatives and buy them online globally.</div>',
     unsafe_allow_html=True
 )
 
-# ============================================
-# SEARCH BOX
-# ============================================
+# ============================================================
+# SEARCH SECTION
+# ============================================================
 
 medicine_name = st.text_input(
     "Enter Medicine Name",
@@ -251,9 +307,9 @@ medicine_name = st.text_input(
 
 search_btn = st.button("🔍 Find Alternatives")
 
-# ============================================
+# ============================================================
 # MAIN LOGIC
-# ============================================
+# ============================================================
 
 if search_btn and medicine_name:
 
@@ -268,11 +324,13 @@ if search_btn and medicine_name:
         manufacturer = medicine_data.get("labeler_name", "N/A")
 
         info_df = pd.DataFrame({
+
             "Field": [
                 "Brand Name",
                 "Generic Name",
                 "Manufacturer"
             ],
+
             "Value": [
                 brand,
                 generic,
@@ -285,9 +343,9 @@ if search_btn and medicine_name:
     else:
         st.warning("Medicine information not found from FDA API.")
 
-    # ============================================
-    # FIND ALTERNATIVES
-    # ============================================
+    # ========================================================
+    # FIND CHEAPER ALTERNATIVES
+    # ========================================================
 
     st.subheader("💰 Cheaper Alternatives")
 
@@ -318,53 +376,56 @@ if search_btn and medicine_name:
             </div>
             """, unsafe_allow_html=True)
 
-            # ============================================
-            # WEBSITE LINKS
-            # ============================================
+            # =================================================
+            # PURCHASE LINKS
+            # =================================================
 
             st.markdown("### 🌐 Buy / Search Online")
 
             links = generate_global_links(alt["name"])
 
-            for site, link in links.items():
+            for site, data in links.items():
 
                 st.markdown(f"""
-                <div class="site">
+                <div class="site-box">
 
                     <h4>✅ {site}</h4>
 
                     <a class="buy-btn"
-                       href="{link}"
+                       href="{data['product']}"
                        target="_blank">
 
-                       Buy / Search on {site}
+                       🛒 Buy Product
 
                     </a>
 
                 </div>
                 """, unsafe_allow_html=True)
 
-# ============================================
+# ============================================================
 # SIDEBAR
-# ============================================
+# ============================================================
 
 st.sidebar.title("📌 About")
 
 st.sidebar.info("""
-This AI app helps users:
+
+This application helps users:
 
 ✅ Find cheaper medicine alternatives  
 ✅ Compare medicine prices  
-✅ Search globally  
+✅ Search medicines globally  
 ✅ Buy medicines online  
-✅ Open pharmacy websites directly  
+✅ Access pharmacy websites directly  
+
 """)
 
-# ============================================
+# ============================================================
 
 st.sidebar.title("🌍 Supported Websites")
 
 st.sidebar.write("""
+
 🇮🇳 India:
 - 1mg
 - NetMeds
@@ -378,27 +439,32 @@ st.sidebar.write("""
 - CVS Pharmacy
 - eBay
 - Google Search
+
 """)
 
-# ============================================
+# ============================================================
 
 st.sidebar.title("🛠 Tech Stack")
 
 st.sidebar.write("""
+
 - Python
 - Streamlit
 - Requests
 - Pandas
-- AI Similarity Matching
 - FDA API
+- AI Similarity Matching
+
 """)
 
-# ============================================
+# ============================================================
 # FOOTER
-# ============================================
+# ============================================================
 
 st.markdown("""
 <div class="footer">
+
 Made with ❤️ using Python + Streamlit
+
 </div>
 """, unsafe_allow_html=True)
