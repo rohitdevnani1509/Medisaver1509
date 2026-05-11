@@ -1,10 +1,11 @@
 # ============================================================
 # app.py
-# AI Medicine Alternative Finder + Google Product Search
+# AI Medicine Alternative Finder using SerpAPI
+# Runtime Google Search + Frontend UI
 # ============================================================
 
 # INSTALL:
-# pip install streamlit requests pandas
+# pip install streamlit google-search-results requests pandas
 
 # RUN:
 # streamlit run app.py
@@ -12,7 +13,7 @@
 # ============================================================
 
 import streamlit as st
-import requests
+from serpapi import GoogleSearch
 import pandas as pd
 
 # ============================================================
@@ -53,13 +54,7 @@ st.markdown("""
     padding: 25px;
     border-radius: 18px;
     margin-bottom: 25px;
-    box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
-}
-
-.price {
-    color: green;
-    font-size: 28px;
-    font-weight: bold;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.08);
 }
 
 .buy-btn {
@@ -73,13 +68,6 @@ st.markdown("""
     margin-right: 10px;
 }
 
-.site-box {
-    background: #eff6ff;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-}
-
 .footer {
     text-align: center;
     margin-top: 50px;
@@ -91,154 +79,97 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# MEDICINE DATABASE
-# SAME SALT / GENERIC LOGIC
+# HEADER
 # ============================================================
 
-MEDICINE_DB = {
+st.markdown(
+    '<div class="title">💊 AI Medicine Alternative Finder</div>',
+    unsafe_allow_html=True
+)
 
-    "Crocin": {
-        "salt": "Paracetamol",
-        "price": 35,
-        "alternatives": [
-            "Dolo 650",
-            "Paracetamol",
-            "Calpol"
-        ]
-    },
+st.markdown(
+    '<div class="subtitle">Find medicine alternatives dynamically from Google Search using SerpAPI.</div>',
+    unsafe_allow_html=True
+)
 
-    "Dolo 650": {
-        "salt": "Paracetamol",
-        "price": 28,
-        "alternatives": [
-            "Crocin",
-            "Paracetamol",
-            "Calpol"
-        ]
-    },
+# ============================================================
+# SERP API KEY INPUT
+# ============================================================
 
-    "Calpol": {
-        "salt": "Paracetamol",
-        "price": 30,
-        "alternatives": [
-            "Crocin",
-            "Dolo 650",
-            "Paracetamol"
-        ]
-    },
+st.sidebar.title("🔑 SerpAPI Configuration")
 
-    "Paracetamol": {
-        "salt": "Paracetamol",
-        "price": 12,
-        "alternatives": [
-            "Crocin",
-            "Dolo 650",
-            "Calpol"
-        ]
-    },
+serp_api_key = st.sidebar.text_input(
+    "Enter SerpAPI Key",
+    type="password"
+)
 
-    "Azithromycin": {
-        "salt": "Azithromycin",
-        "price": 65,
-        "alternatives": [
-            "Azee"
-        ]
-    },
+st.sidebar.markdown("""
+Get free API key from:
 
-    "Azee": {
-        "salt": "Azithromycin",
-        "price": 120,
-        "alternatives": [
-            "Azithromycin"
-        ]
+https://serpapi.com/users/sign_up
+""")
+
+# ============================================================
+# SEARCH FUNCTION
+# ============================================================
+
+def search_alternative_medicines(medicine, api_key):
+
+    query = f"{medicine} alternative medicine generic substitute"
+
+    params = {
+
+        "engine": "google",
+
+        "q": query,
+
+        "api_key": api_key,
+
+        "num": 10
     }
-}
 
-# ============================================================
-# FDA API
-# ============================================================
+    search = GoogleSearch(params)
 
-FDA_API = "https://api.fda.gov/drug/ndc.json"
-
-# ============================================================
-# FUNCTIONS
-# ============================================================
-
-def fetch_medicine_data(medicine_name):
-
-    try:
-
-        url = f"{FDA_API}?search=brand_name:{medicine_name}&limit=1"
-
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            return None
-
-        data = response.json()
-
-        if "results" not in data:
-            return None
-
-        return data["results"][0]
-
-    except:
-        return None
-
-# ------------------------------------------------------------
-
-def find_alternatives(medicine_name):
-
-    if medicine_name not in MEDICINE_DB:
-        return []
+    results = search.get_dict()
 
     alternatives = []
 
-    medicine_data = MEDICINE_DB[medicine_name]
+    if "organic_results" in results:
 
-    original_price = medicine_data["price"]
+        for item in results["organic_results"]:
 
-    for alt in medicine_data["alternatives"]:
+            title = item.get("title", "No Title")
 
-        if alt in MEDICINE_DB:
+            snippet = item.get("snippet", "No Description")
 
-            alt_data = MEDICINE_DB[alt]
-
-            cheaper = alt_data["price"] < original_price
+            link = item.get("link", "#")
 
             alternatives.append({
-                "name": alt,
-                "salt": alt_data["salt"],
-                "price": alt_data["price"],
-                "cheaper": cheaper
+
+                "title": title,
+
+                "snippet": snippet,
+
+                "link": link
             })
 
-    return sorted(
-        alternatives,
-        key=lambda x: x["price"]
-    )
+    return alternatives
 
-# ------------------------------------------------------------
+# ============================================================
+# PRODUCT LINKS
+# ============================================================
 
-def generate_links(medicine):
+def generate_product_links(medicine):
 
     med = medicine.replace(" ", "+")
 
     return {
 
-        # =====================================================
-        # GOOGLE LINKS
-        # =====================================================
-
-        "Google Search":
-        f"https://www.google.com/search?q={med}+medicine",
-
         "Google Shopping":
         f"https://www.google.com/search?tbm=shop&q={med}+medicine",
 
-        # =====================================================
-        # INDIA PHARMACY LINKS
-        # =====================================================
+        "Amazon":
+        f"https://www.amazon.in/s?k={med}+medicine",
 
         "1mg":
         f"https://www.1mg.com/search/all?name={med}",
@@ -250,41 +181,11 @@ def generate_links(medicine):
         f"https://pharmeasy.in/search/all?name={med}",
 
         "Apollo Pharmacy":
-        f"https://www.apollopharmacy.in/search-medicines/{med}",
-
-        # =====================================================
-        # GLOBAL LINKS
-        # =====================================================
-
-        "Amazon":
-        f"https://www.amazon.in/s?k={med}+medicine",
-
-        "GoodRx":
-        f"https://www.goodrx.com/search?q={med}",
-
-        "Walgreens":
-        f"https://www.walgreens.com/search/results.jsp?Ntt={med}",
-
-        "CVS Pharmacy":
-        f"https://www.cvs.com/search/?searchTerm={med}"
+        f"https://www.apollopharmacy.in/search-medicines/{med}"
     }
 
 # ============================================================
-# HEADER
-# ============================================================
-
-st.markdown(
-    '<div class="title">💊 AI Medicine Alternative Finder</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="subtitle">Find cheaper alternatives of the same medicine and purchase online globally.</div>',
-    unsafe_allow_html=True
-)
-
-# ============================================================
-# SEARCH BOX
+# SEARCH INPUT
 # ============================================================
 
 medicine_name = st.text_input(
@@ -298,111 +199,80 @@ search_btn = st.button("🔍 Find Alternatives")
 # MAIN LOGIC
 # ============================================================
 
-if search_btn and medicine_name:
+if search_btn:
 
-    st.subheader("📋 Medicine Information")
+    if not serp_api_key:
 
-    # ========================================================
-    # FDA API DATA
-    # ========================================================
+        st.error("Please enter your SerpAPI Key.")
 
-    medicine_data = fetch_medicine_data(medicine_name)
+    elif not medicine_name:
 
-    if medicine_data:
-
-        brand = medicine_data.get("brand_name", "N/A")
-        generic = medicine_data.get("generic_name", "N/A")
-        manufacturer = medicine_data.get("labeler_name", "N/A")
-
-        df = pd.DataFrame({
-
-            "Field": [
-                "Brand Name",
-                "Generic Name",
-                "Manufacturer"
-            ],
-
-            "Value": [
-                brand,
-                generic,
-                manufacturer
-            ]
-        })
-
-        st.table(df)
-
-    else:
-        st.warning("Medicine information not found from FDA API.")
-
-    # ========================================================
-    # ALTERNATIVES
-    # ========================================================
-
-    st.subheader("💰 Alternative Medicines")
-
-    alternatives = find_alternatives(medicine_name)
-
-    if not alternatives:
-
-        st.error("No alternatives found.")
+        st.error("Please enter medicine name.")
 
     else:
 
-        for alt in alternatives:
+        with st.spinner("Searching Google for alternative medicines..."):
 
-            cheaper_text = (
-                "✅ Cheaper Alternative"
-                if alt["cheaper"]
-                else "⚠ Similar Price"
+            results = search_alternative_medicines(
+                medicine_name,
+                serp_api_key
             )
 
-            st.markdown(f"""
-            <div class="card">
+        # ====================================================
+        # SHOW RESULTS
+        # ====================================================
 
-                <h2>{alt['name']}</h2>
+        st.subheader("💊 Alternative Medicines Found")
 
-                <div class="price">
-                    ₹{alt['price']}
-                </div>
+        if not results:
 
-                <p>
-                    <b>Salt Composition:</b>
-                    {alt['salt']}
-                </p>
+            st.warning("No alternatives found.")
 
-                <p>
-                    <b>Status:</b>
-                    {cheaper_text}
-                </p>
+        else:
 
-            </div>
-            """, unsafe_allow_html=True)
-
-            # =================================================
-            # PURCHASE LINKS
-            # =================================================
-
-            st.markdown("### 🌐 Buy / Search Online")
-
-            links = generate_links(alt["name"])
-
-            for site, link in links.items():
+            for result in results:
 
                 st.markdown(f"""
-                <div class="site-box">
+                <div class="card">
 
-                    <h4>✅ {site}</h4>
+                    <h2>{result['title']}</h2>
+
+                    <p>{result['snippet']}</p>
 
                     <a class="buy-btn"
-                       href="{link}"
+                       href="{result['link']}"
                        target="_blank">
 
-                       🛒 Open {site}
+                       🔍 Open Google Result
 
                     </a>
 
                 </div>
                 """, unsafe_allow_html=True)
+
+                # ==============================================
+                # PURCHASE LINKS
+                # ==============================================
+
+                st.markdown("### 🛒 Purchase Links")
+
+                links = generate_product_links(
+                    medicine_name
+                )
+
+                for site, link in links.items():
+
+                    st.markdown(f"""
+                    <a class="buy-btn"
+                       href="{link}"
+                       target="_blank">
+
+                       Buy on {site}
+
+                    </a>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("<br><hr>", unsafe_allow_html=True)
 
 # ============================================================
 # SIDEBAR
@@ -412,13 +282,12 @@ st.sidebar.title("📌 Features")
 
 st.sidebar.info("""
 
-✅ Same Salt Alternatives  
-✅ Cheaper Medicine Detection  
-✅ Google Search Integration  
+✅ Runtime Google Search  
+✅ SerpAPI Integration  
+✅ Dynamic Medicine Alternatives  
 ✅ Google Shopping Links  
-✅ Online Pharmacy Redirects  
-✅ Global Product Search  
-✅ FDA API Integration  
+✅ Purchase Redirect Buttons  
+✅ Streamlit Frontend UI  
 
 """)
 
@@ -428,33 +297,13 @@ st.sidebar.title("🌍 Supported Websites")
 
 st.sidebar.write("""
 
-🇮🇳 India:
+- Google Search
+- Google Shopping
+- Amazon
 - 1mg
 - NetMeds
 - PharmEasy
 - Apollo Pharmacy
-
-🌎 Global:
-- Google Search
-- Google Shopping
-- Amazon
-- GoodRx
-- Walgreens
-- CVS Pharmacy
-
-""")
-
-# ============================================================
-
-st.sidebar.title("🛠 Tech Stack")
-
-st.sidebar.write("""
-
-- Python
-- Streamlit
-- Requests
-- Pandas
-- FDA API
 
 """)
 
@@ -465,7 +314,7 @@ st.sidebar.write("""
 st.markdown("""
 <div class="footer">
 
-Made with ❤️ using Python + Streamlit
+Made with ❤️ using Python + Streamlit + SerpAPI
 
 </div>
 """, unsafe_allow_html=True)
