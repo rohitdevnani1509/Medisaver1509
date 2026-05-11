@@ -306,7 +306,7 @@ if search_btn:
 
         else:
 
-            for result in results:
+            for idx, result in enumerate(results, start=1):
 
                 st.markdown(
                     '<div class="result-card">',
@@ -314,12 +314,20 @@ if search_btn:
                 )
 
                 # ============================================
-                # AI INFO TITLE
+                # DYNAMIC TITLE
                 # ============================================
 
-                st.markdown(
-                    "## 🤖 AI Info of Input Medicine"
-                )
+                if idx == 1:
+
+                    st.markdown(
+                        "## 🤖 AI Info for Input Medicine"
+                    )
+
+                else:
+
+                    st.markdown(
+                        f"## 💊 Alternative #{idx}"
+                    )
 
                 # ============================================
                 # MEDICINE INFO
@@ -393,6 +401,7 @@ st.sidebar.info("""
 ✅ Top 5 Cheapest Results  
 ✅ Runtime SerpAPI Key  
 ✅ Dynamic Google Search  
+✅ AI Info for Input Medicine  
 ✅ Medicine Price Extraction  
 ✅ Purchase Links  
 ✅ Clean Streamlit UI  
