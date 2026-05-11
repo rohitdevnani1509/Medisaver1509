@@ -1,9 +1,8 @@
 # ============================================================
 # MediSaver.py
-# Working Streamlit App
-# Medicine Alternatives + Purchase Links from Google
-# Runtime SerpAPI Key Input
-# No serpapi SDK required
+# Working AI Medicine Alternative Finder
+# Dynamic Google Search + Runtime SerpAPI Key
+# Shows Alternate Medicines + Purchase Links
 # ============================================================
 
 # INSTALL:
@@ -112,14 +111,15 @@ https://serpapi.com/users/sign_up
 """)
 
 # ============================================================
-# SEARCH FUNCTION
+# GOOGLE SEARCH FUNCTION
 # ============================================================
 
 def search_alternative_medicines(medicine_name, api_key):
 
     url = "https://serpapi.com/search.json"
 
-    query = f"{medicine_name} alternative medicine generic substitute"
+    # Better query for substitutes
+    query = f"{medicine_name} generic substitute medicine"
 
     params = {
 
@@ -129,7 +129,7 @@ def search_alternative_medicines(medicine_name, api_key):
 
         "api_key": api_key,
 
-        "num": 10
+        "num": 20
     }
 
     try:
@@ -151,16 +151,45 @@ def search_alternative_medicines(medicine_name, api_key):
 
             for item in data["organic_results"]:
 
+                title = item.get("title", "")
+
+                snippet = item.get("snippet", "")
+
+                link = item.get("link", "#")
+
+                if len(title) < 3:
+                    continue
+
                 medicines.append({
 
-                    "title":
-                    item.get("title", "No Title"),
+                    "name": title,
 
-                    "snippet":
-                    item.get("snippet", "No Description"),
+                    "description": snippet,
 
-                    "link":
-                    item.get("link", "#")
+                    "link": link
+                })
+
+        # ====================================================
+        # RELATED QUESTIONS
+        # ====================================================
+
+        if "related_questions" in data:
+
+            for item in data["related_questions"]:
+
+                question = item.get("question", "")
+
+                snippet = item.get("snippet", "")
+
+                link = item.get("link", "#")
+
+                medicines.append({
+
+                    "name": question,
+
+                    "description": snippet,
+
+                    "link": link
                 })
 
         return medicines
@@ -188,7 +217,7 @@ def generate_purchase_links(medicine):
         "Google Shopping":
         f"https://www.google.com/search?tbm=shop&q={med}+medicine",
 
-        # INDIA
+        # INDIA PHARMACY LINKS
         "1mg":
         f"https://www.1mg.com/search/all?name={med}",
 
@@ -201,7 +230,7 @@ def generate_purchase_links(medicine):
         "Apollo Pharmacy":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
-        # GLOBAL
+        # GLOBAL LINKS
         "Amazon":
         f"https://www.amazon.in/s?k={med}+medicine",
 
@@ -268,15 +297,15 @@ if search_btn:
                 st.markdown(f"""
                 <div class="card">
 
-                    <h2>{medicine['title']}</h2>
+                    <h2>{medicine['name']}</h2>
 
-                    <p>{medicine['snippet']}</p>
+                    <p>{medicine['description']}</p>
 
                     <a class="buy-btn"
                        href="{medicine['link']}"
                        target="_blank">
 
-                       🔍 Open Google Result
+                       🔍 Open Source
 
                     </a>
 
@@ -287,7 +316,7 @@ if search_btn:
                 # PURCHASE LINKS
                 # ============================================
 
-                st.markdown("### 🛒 Purchase Links")
+                st.markdown("### 🛒 Buy Online")
 
                 purchase_links = generate_purchase_links(
                     medicine_name
@@ -316,10 +345,10 @@ st.sidebar.title("📌 Features")
 st.sidebar.info("""
 
 ✅ Runtime SerpAPI Key Input  
-✅ Google Search Integration  
-✅ Alternative Medicine Search  
+✅ Dynamic Google Search  
+✅ Alternate Medicine Detection  
+✅ Google Shopping Integration  
 ✅ Purchase Links  
-✅ Google Shopping Links  
 ✅ Streamlit Frontend UI  
 
 """)
