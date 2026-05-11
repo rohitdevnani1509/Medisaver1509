@@ -1,7 +1,8 @@
 # ============================================================
 # MediSaver.py
-# AI Medicine Alternative Finder
-# Single Working File
+# Working Dynamic Medicine Alternative Finder
+# Google Search Results + Purchase Links
+# Uses SerpAPI at Runtime
 # ============================================================
 
 # INSTALL:
@@ -21,7 +22,7 @@ from urllib.parse import quote_plus
 # ============================================================
 
 st.set_page_config(
-    page_title="MediSaver AI",
+    page_title="MediSaver",
     page_icon="💊",
     layout="wide"
 )
@@ -49,39 +50,32 @@ st.markdown("""
     margin-bottom: 30px;
 }
 
-.result-card {
+.card {
     background: white;
-    padding: 25px;
+    padding: 24px;
     border-radius: 18px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border-left: 6px solid #2563eb;
-    transition: 0.3s ease;
+    margin-bottom: 22px;
+    box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
 }
 
-.result-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-}
-
-.purchase-btn {
+.buy-btn {
     text-decoration: none;
-    background: #16a34a;
+    background: #2563eb;
     color: white !important;
-    padding: 12px 16px;
+    padding: 10px 18px;
     border-radius: 10px;
-    display: block;
-    text-align: center;
-    font-weight: 600;
-    margin-bottom: 12px;
+    display: inline-block;
+    margin-top: 10px;
+    margin-right: 10px;
+    font-weight: 500;
 }
 
-.ai-box {
-    background: #eef6ff;
-    border-left: 6px solid #2563eb;
-    padding: 20px;
+.debug-box {
+    background: #fff3cd;
+    padding: 15px;
     border-radius: 12px;
-    margin-bottom: 25px;
+    margin-top: 20px;
+    color: #856404;
 }
 
 .footer {
@@ -99,12 +93,12 @@ st.markdown("""
 # ============================================================
 
 st.markdown(
-    '<div class="title">💊 MediSaver AI</div>',
+    '<div class="title">💊 MediSaver</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="subtitle">Find alternate medicines dynamically using Google AI Search + SerpAPI.</div>',
+    '<div class="subtitle">Find alternate medicines dynamically from Google Search using SerpAPI.</div>',
     unsafe_allow_html=True
 )
 
@@ -147,7 +141,7 @@ def generate_purchase_links(medicine):
         "NetMeds":
         f"https://www.netmeds.com/catalogsearch/result/{med}",
 
-        "Apollo":
+        "Apollo Pharmacy":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
         "Google Shopping":
@@ -158,7 +152,7 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# SEARCH FUNCTION
+# SERPAPI GOOGLE SEARCH
 # ============================================================
 
 def search_alternatives(
@@ -168,7 +162,8 @@ def search_alternatives(
 
     url = "https://serpapi.com/search.json"
 
-    query = f"{medicine_name} substitute medicine"
+    # Better query for medicine alternatives
+    query = f"{medicine_name} substitute"
 
     params = {
 
@@ -187,7 +182,6 @@ def search_alternatives(
         "gl": "us"
     }
 
-    ai_answer = None
     alternatives = []
 
     try:
@@ -197,25 +191,31 @@ def search_alternatives(
             params=params
         )
 
+        # ====================================================
+        # DEBUG STATUS
+        # ====================================================
+
+        st.write("HTTP Status:", response.status_code)
+
         data = response.json()
 
         # ====================================================
-        # AI SUMMARY
+        # DEBUG RESPONSE
         # ====================================================
 
-        if "answer_box" in data:
+        with st.expander("🔍 Debug API Response"):
 
-            ai_answer = data["answer_box"].get(
-                "snippet",
-                "No AI summary available."
-            )
+            st.json(data)
 
-        elif "knowledge_graph" in data:
+        # ====================================================
+        # HANDLE API ERRORS
+        # ====================================================
 
-            ai_answer = data["knowledge_graph"].get(
-                "description",
-                "No AI summary available."
-            )
+        if "error" in data:
+
+            st.error(f"SerpAPI Error: {data['error']}")
+
+            return []
 
         # ====================================================
         # ORGANIC RESULTS
@@ -225,25 +225,31 @@ def search_alternatives(
 
             for item in data["organic_results"]:
 
+                title = item.get("title", "No Title")
+
+                snippet = item.get(
+                    "snippet",
+                    "No description available"
+                )
+
+                link = item.get("link", "#")
+
                 alternatives.append({
 
-                    "title":
-                    item.get("title", ""),
+                    "title": title,
 
-                    "snippet":
-                    item.get("snippet", ""),
+                    "snippet": snippet,
 
-                    "link":
-                    item.get("link", "#")
+                    "link": link
                 })
 
-        return ai_answer, alternatives
+        return alternatives
 
     except Exception as e:
 
         st.error(f"Search Error: {e}")
 
-        return None, []
+        return []
 
 # ============================================================
 # USER INPUT
@@ -273,130 +279,59 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Searching AI alternatives..."
+            "Searching Google for alternate medicines..."
         ):
 
-            ai_summary, results = search_alternatives(
+            results = search_alternatives(
                 medicine_name,
                 SERP_API_KEY
             )
 
         # ====================================================
-        # AI SUMMARY
+        # RESULTS
         # ====================================================
 
-        if ai_summary:
+        st.subheader("💊 Google Search Results")
 
-            st.subheader("🤖 AI Search Summary")
-
-            st.markdown(f"""
-            <div class="ai-box">
-
-            {ai_summary}
-
-            </div>
-            """, unsafe_allow_html=True)
-
-        # ====================================================
-        # EXTRACT MEDICINE NAMES
-        # ====================================================
-
-        alternative_names = set()
-
-        for result in results:
-
-            title = result.get("title", "")
-
-            words = title.split()
-
-            for word in words:
-
-                clean_word = (
-                    word
-                    .replace("|", "")
-                    .replace(",", "")
-                    .replace("(", "")
-                    .replace(")", "")
-                )
-
-                ignored = [
-
-                    "tablet",
-                    "tablets",
-                    "capsule",
-                    "capsules",
-                    "uses",
-                    "price",
-                    "substitutes",
-                    "substitute",
-                    "medicine",
-                    "mg",
-                    "side",
-                    "effects",
-                    "for",
-                    "and",
-                    "with",
-                    "the"
-                ]
-
-                if len(clean_word) > 3:
-
-                    if clean_word.lower() not in ignored:
-
-                        alternative_names.add(
-                            clean_word
-                        )
-
-        # ====================================================
-        # DISPLAY RESULTS
-        # ====================================================
-
-        st.subheader("💊 Alternate Medicines")
-
-        if not alternative_names:
+        if not results:
 
             st.warning(
                 "No alternate medicines found."
             )
 
+            st.markdown("""
+            <div class="debug-box">
+
+            Possible reasons:
+
+            • Invalid SerpAPI key  
+            • Free plan exhausted  
+            • Google returned no organic results  
+            • Query returned limited data  
+
+            Try another medicine name.
+
+            </div>
+            """, unsafe_allow_html=True)
+
         else:
 
-            for medicine in sorted(alternative_names):
+            for result in results:
 
                 st.markdown(f"""
-                <div class="result-card">
+                <div class="card">
 
-                    <div style="
-                    display:flex;
-                    align-items:center;
-                    gap:15px;
-                    ">
+                    <h2>{result['title']}</h2>
 
-                        <div style="
-                        background:#eff6ff;
-                        padding:12px;
-                        border-radius:12px;
-                        font-size:28px;
-                        ">
-                        💊
-                        </div>
+                    <p>{result['snippet']}</p>
 
-                        <div>
+                    <a class="buy-btn"
+                       href="{result['link']}"
+                       target="_blank">
 
-                            <h2 style="
-                            margin:0;
-                            color:#0f172a;
-                            font-size:26px;
-                            font-weight:700;
-                            ">
+                       🔍 Open Google Result
 
-                            {medicine}
-
-                            </h2>
-
-                        </div>
-
-                    </div>
+                    </a>
 
                 </div>
                 """, unsafe_allow_html=True)
@@ -405,39 +340,23 @@ if search_btn:
                 # PURCHASE LINKS
                 # =============================================
 
-                st.markdown("""
-                <h3 style="
-                margin-top:15px;
-                margin-bottom:15px;
-                color:#0f172a;
-                ">
-                🛒 Buy Medicine Online
-                </h3>
-                """, unsafe_allow_html=True)
+                st.markdown("### 🛒 Purchase Links")
 
                 links = generate_purchase_links(
-                    medicine
+                    medicine_name
                 )
-
-                cols = st.columns(3)
-
-                index = 0
 
                 for site, link in links.items():
 
-                    with cols[index % 3]:
+                    st.markdown(f"""
+                    <a class="buy-btn"
+                       href="{link}"
+                       target="_blank">
 
-                        st.markdown(f"""
-                        <a href="{link}"
-                           target="_blank"
-                           class="purchase-btn">
+                       Buy on {site}
 
-                           Buy on {site}
-
-                        </a>
-                        """, unsafe_allow_html=True)
-
-                    index += 1
+                    </a>
+                    """, unsafe_allow_html=True)
 
                 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -450,12 +369,15 @@ st.sidebar.title("📌 Features")
 st.sidebar.info("""
 
 ✅ Runtime SerpAPI Key  
-✅ Google AI Search  
-✅ AI Search Summary  
-✅ Alternate Medicine Finder  
-✅ Purchase Links  
-✅ 1mg / PharmEasy / Truemeds  
-✅ Modern Frontend UI  
+✅ Dynamic Google Search  
+✅ Live Google Results  
+✅ Medicine Substitute Search  
+✅ 1mg Links  
+✅ PharmEasy Links  
+✅ Truemeds Links  
+✅ Google Shopping Links  
+✅ Streamlit Frontend UI  
+✅ API Debug Response  
 
 """)
 
