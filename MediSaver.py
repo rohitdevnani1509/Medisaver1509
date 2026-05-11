@@ -1,7 +1,7 @@
 # ============================================================
 # MediSaver.py
-# Improved Frontend Version
-# Clean UI with Info + Details
+# Clean Streamlit Native UI Version
+# No Visible HTML Tags
 # ============================================================
 
 # INSTALL:
@@ -49,14 +49,6 @@ st.markdown("""
     margin-bottom: 30px;
 }
 
-.card {
-    background: white;
-    padding: 24px;
-    border-radius: 18px;
-    margin-bottom: 22px;
-    box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
-}
-
 .buy-btn {
     text-decoration: none;
     background: #2563eb;
@@ -67,18 +59,6 @@ st.markdown("""
     margin-top: 10px;
     margin-right: 10px;
     font-weight: 500;
-}
-
-.info-title {
-    font-size: 20px;
-    font-weight: bold;
-    color: #0f172a;
-    margin-bottom: 8px;
-}
-
-.details-text {
-    color: #475569;
-    line-height: 1.7;
 }
 
 .debug-box {
@@ -173,7 +153,6 @@ def search_alternatives(
 
     url = "https://serpapi.com/search.json"
 
-    # Improved query
     query = f"""
     {medicine_name} generic alternative
     same salt composition
@@ -328,7 +307,7 @@ if search_btn:
         else:
 
             # ====================================================
-            # PURCHASE LINKS OUTSIDE LOOP
+            # PURCHASE LINKS
             # ====================================================
 
             st.subheader("🛒 Purchase Links")
@@ -349,7 +328,7 @@ if search_btn:
                 </a>
                 """, unsafe_allow_html=True)
 
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("---")
 
             # ====================================================
             # RESULTS LOOP
@@ -357,29 +336,22 @@ if search_btn:
 
             for result in results:
 
-                st.markdown(f"""
-                <div class="card">
+                with st.container():
 
-                    <div class="info-title">
-                        Info
-                    </div>
+                    st.markdown("### Info")
+                    st.write(result['title'])
 
-                    <div>
-                        {result['title']}
-                    </div>
+                    st.markdown("### Details")
+                    st.write(result['snippet'])
 
-                    <br>
+                    if result['link'] != "#":
 
-                    <div class="info-title">
-                        Details
-                    </div>
+                        st.link_button(
+                            "🔍 Open Source",
+                            result['link']
+                        )
 
-                    <div class="details-text">
-                        {result['snippet']}
-                    </div>
-
-                </div>
-                """, unsafe_allow_html=True)
+                    st.divider()
 
 # ============================================================
 # SIDEBAR FEATURES
@@ -393,10 +365,9 @@ st.sidebar.info("""
 ✅ Dynamic Google Search  
 ✅ Live Google Results  
 ✅ Generic Alternative Search  
-✅ Clean Frontend UI  
-✅ Info + Details Layout  
+✅ Clean Streamlit Native UI  
+✅ No Visible HTML Tags  
 ✅ Purchase Links  
-✅ Streamlit UI  
 ✅ API Debug Response  
 
 """)
