@@ -1,27 +1,36 @@
 # ============================================================
-# app.py
+# MediSaver.py
 # AI Medicine Alternative Finder using SerpAPI
-# Runtime Google Search + Frontend UI
+# Fixed Streamlit Cloud Compatible Version
 # ============================================================
 
 # INSTALL:
-# pip install streamlit google-search-results requests pandas
+# pip install -r requirements.txt
 
 # RUN:
-# streamlit run app.py
+# streamlit run MediSaver.py
 
 # ============================================================
 
 import streamlit as st
-from serpapi.google_search import GoogleSearch
 import pandas as pd
+import requests
+
+# ============================================================
+# FIXED SERPAPI IMPORT
+# ============================================================
+
+try:
+    from serpapi.google_search import GoogleSearch
+except:
+    from serpapi import GoogleSearch
 
 # ============================================================
 # PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
-    page_title="AI Medicine Alternative Finder",
+    page_title="MediSaver",
     page_icon="💊",
     layout="wide"
 )
@@ -34,18 +43,18 @@ st.markdown("""
 <style>
 
 .main {
-    background-color: #f4f7fb;
+    background-color: #f5f7fb;
 }
 
 .title {
-    font-size: 48px;
+    font-size: 50px;
     font-weight: bold;
     color: #0f172a;
 }
 
 .subtitle {
-    font-size: 18px;
     color: #475569;
+    font-size: 18px;
     margin-bottom: 30px;
 }
 
@@ -54,7 +63,7 @@ st.markdown("""
     padding: 25px;
     border-radius: 18px;
     margin-bottom: 25px;
-    box-shadow: 0px 5px 15px rgba(0,0,0,0.08);
+    box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
 }
 
 .buy-btn {
@@ -70,8 +79,8 @@ st.markdown("""
 
 .footer {
     text-align: center;
-    margin-top: 50px;
     color: gray;
+    margin-top: 50px;
     padding: 20px;
 }
 
@@ -83,22 +92,22 @@ st.markdown("""
 # ============================================================
 
 st.markdown(
-    '<div class="title">💊 AI Medicine Alternative Finder</div>',
+    '<div class="title">💊 MediSaver</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="subtitle">Find medicine alternatives dynamically from Google Search using SerpAPI.</div>',
+    '<div class="subtitle">Find alternative medicines dynamically from Google Search.</div>',
     unsafe_allow_html=True
 )
 
 # ============================================================
-# SERP API KEY INPUT
+# SIDEBAR
 # ============================================================
 
 st.sidebar.title("🔑 SerpAPI Configuration")
 
-serp_api_key = st.sidebar.text_input(
+SERP_API_KEY = st.sidebar.text_input(
     "Enter SerpAPI Key",
     type="password"
 )
@@ -110,12 +119,12 @@ https://serpapi.com/users/sign_up
 """)
 
 # ============================================================
-# SEARCH FUNCTION
+# GOOGLE SEARCH FUNCTION
 # ============================================================
 
-def search_alternative_medicines(medicine, api_key):
+def search_alternatives(medicine_name, api_key):
 
-    query = f"{medicine} alternative medicine generic substitute"
+    query = f"{medicine_name} generic substitute alternative medicine"
 
     params = {
 
@@ -128,49 +137,56 @@ def search_alternative_medicines(medicine, api_key):
         "num": 10
     }
 
-    search = GoogleSearch(params)
+    try:
 
-    results = search.get_dict()
+        search = GoogleSearch(params)
 
-    alternatives = []
+        results = search.get_dict()
 
-    if "organic_results" in results:
+        medicines = []
 
-        for item in results["organic_results"]:
+        if "organic_results" in results:
 
-            title = item.get("title", "No Title")
+            for item in results["organic_results"]:
 
-            snippet = item.get("snippet", "No Description")
+                medicines.append({
 
-            link = item.get("link", "#")
+                    "title":
+                    item.get("title", "No Title"),
 
-            alternatives.append({
+                    "snippet":
+                    item.get("snippet", "No Description"),
 
-                "title": title,
+                    "link":
+                    item.get("link", "#")
+                })
 
-                "snippet": snippet,
+        return medicines
 
-                "link": link
-            })
+    except Exception as e:
 
-    return alternatives
+        st.error(f"Search Error: {e}")
+
+        return []
 
 # ============================================================
-# PRODUCT LINKS
+# PURCHASE LINKS
 # ============================================================
 
-def generate_product_links(medicine):
+def generate_purchase_links(medicine):
 
     med = medicine.replace(" ", "+")
 
     return {
 
+        # GOOGLE
+        "Google Search":
+        f"https://www.google.com/search?q={med}+medicine",
+
         "Google Shopping":
         f"https://www.google.com/search?tbm=shop&q={med}+medicine",
 
-        "Amazon":
-        f"https://www.amazon.in/s?k={med}+medicine",
-
+        # INDIA
         "1mg":
         f"https://www.1mg.com/search/all?name={med}",
 
@@ -181,7 +197,20 @@ def generate_product_links(medicine):
         f"https://pharmeasy.in/search/all?name={med}",
 
         "Apollo Pharmacy":
-        f"https://www.apollopharmacy.in/search-medicines/{med}"
+        f"https://www.apollopharmacy.in/search-medicines/{med}",
+
+        # GLOBAL
+        "Amazon":
+        f"https://www.amazon.in/s?k={med}+medicine",
+
+        "GoodRx":
+        f"https://www.goodrx.com/search?q={med}",
+
+        "Walgreens":
+        f"https://www.walgreens.com/search/results.jsp?Ntt={med}",
+
+        "CVS Pharmacy":
+        f"https://www.cvs.com/search/?searchTerm={med}"
     }
 
 # ============================================================
@@ -201,9 +230,9 @@ search_btn = st.button("🔍 Find Alternatives")
 
 if search_btn:
 
-    if not serp_api_key:
+    if not SERP_API_KEY:
 
-        st.error("Please enter your SerpAPI Key.")
+        st.error("Please enter SerpAPI Key.")
 
     elif not medicine_name:
 
@@ -211,36 +240,36 @@ if search_btn:
 
     else:
 
-        with st.spinner("Searching Google for alternative medicines..."):
+        with st.spinner("Searching alternatives from Google..."):
 
-            results = search_alternative_medicines(
+            alternatives = search_alternatives(
                 medicine_name,
-                serp_api_key
+                SERP_API_KEY
             )
 
         # ====================================================
-        # SHOW RESULTS
+        # DISPLAY RESULTS
         # ====================================================
 
-        st.subheader("💊 Alternative Medicines Found")
+        st.subheader("💊 Alternative Medicines")
 
-        if not results:
+        if not alternatives:
 
-            st.warning("No alternatives found.")
+            st.warning("No alternative medicines found.")
 
         else:
 
-            for result in results:
+            for medicine in alternatives:
 
                 st.markdown(f"""
                 <div class="card">
 
-                    <h2>{result['title']}</h2>
+                    <h2>{medicine['title']}</h2>
 
-                    <p>{result['snippet']}</p>
+                    <p>{medicine['snippet']}</p>
 
                     <a class="buy-btn"
-                       href="{result['link']}"
+                       href="{medicine['link']}"
                        target="_blank">
 
                        🔍 Open Google Result
@@ -250,13 +279,13 @@ if search_btn:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # ==============================================
+                # ============================================
                 # PURCHASE LINKS
-                # ==============================================
+                # ============================================
 
                 st.markdown("### 🛒 Purchase Links")
 
-                links = generate_product_links(
+                links = generate_purchase_links(
                     medicine_name
                 )
 
@@ -272,19 +301,19 @@ if search_btn:
                     </a>
                     """, unsafe_allow_html=True)
 
-                st.markdown("<br><hr>", unsafe_allow_html=True)
+                st.markdown("<hr>", unsafe_allow_html=True)
 
 # ============================================================
-# SIDEBAR
+# SIDEBAR INFO
 # ============================================================
 
 st.sidebar.title("📌 Features")
 
 st.sidebar.info("""
 
-✅ Runtime Google Search  
+✅ Dynamic Google Search  
 ✅ SerpAPI Integration  
-✅ Dynamic Medicine Alternatives  
+✅ Runtime Medicine Alternatives  
 ✅ Google Shopping Links  
 ✅ Purchase Redirect Buttons  
 ✅ Streamlit Frontend UI  
@@ -304,6 +333,9 @@ st.sidebar.write("""
 - NetMeds
 - PharmEasy
 - Apollo Pharmacy
+- GoodRx
+- Walgreens
+- CVS Pharmacy
 
 """)
 
