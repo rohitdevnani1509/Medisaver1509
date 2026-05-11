@@ -1,7 +1,8 @@
 # ============================================================
 # MediSaver.py
 # Clean Streamlit Native UI Version
-# No Visible HTML Tags
+# Purchase Links After Details
+# No Open Source Button
 # ============================================================
 
 # INSTALL:
@@ -47,18 +48,6 @@ st.markdown("""
     font-size: 18px;
     color: #475569;
     margin-bottom: 30px;
-}
-
-.buy-btn {
-    text-decoration: none;
-    background: #2563eb;
-    color: white !important;
-    padding: 10px 18px;
-    border-radius: 10px;
-    display: inline-block;
-    margin-top: 10px;
-    margin-right: 10px;
-    font-weight: 500;
 }
 
 .debug-box {
@@ -307,30 +296,6 @@ if search_btn:
         else:
 
             # ====================================================
-            # PURCHASE LINKS
-            # ====================================================
-
-            st.subheader("🛒 Purchase Links")
-
-            links = generate_purchase_links(
-                medicine_name
-            )
-
-            for site, link in links.items():
-
-                st.markdown(f"""
-                <a class="buy-btn"
-                   href="{link}"
-                   target="_blank">
-
-                   Buy on {site}
-
-                </a>
-                """, unsafe_allow_html=True)
-
-            st.markdown("---")
-
-            # ====================================================
             # RESULTS LOOP
             # ====================================================
 
@@ -338,18 +303,44 @@ if search_btn:
 
                 with st.container():
 
-                    st.markdown("### Info")
+                    # ============================================
+                    # INFO
+                    # ============================================
+
+                    st.markdown("## Info")
                     st.write(result['title'])
 
-                    st.markdown("### Details")
+                    # ============================================
+                    # DETAILS
+                    # ============================================
+
+                    st.markdown("## Details")
                     st.write(result['snippet'])
 
-                    if result['link'] != "#":
+                    # ============================================
+                    # PURCHASE LINKS
+                    # ============================================
 
-                        st.link_button(
-                            "🔍 Open Source",
-                            result['link']
-                        )
+                    st.markdown("## 🛒 Purchase Links")
+
+                    links = generate_purchase_links(
+                        medicine_name
+                    )
+
+                    cols = st.columns(3)
+
+                    i = 0
+
+                    for site, link in links.items():
+
+                        with cols[i % 3]:
+
+                            st.link_button(
+                                f"Buy on {site}",
+                                link
+                            )
+
+                        i += 1
 
                     st.divider()
 
@@ -367,7 +358,8 @@ st.sidebar.info("""
 ✅ Generic Alternative Search  
 ✅ Clean Streamlit Native UI  
 ✅ No Visible HTML Tags  
-✅ Purchase Links  
+✅ Purchase Links Below Details  
+✅ Responsive Layout  
 ✅ API Debug Response  
 
 """)
