@@ -1,7 +1,6 @@
 # ============================================================
 # MediSaver.py
-# Top 5 Medicine Alternatives Finder
-# Clean Streamlit Native UI
+# Best Medicine Price Finder using SerpAPI + Streamlit
 # ============================================================
 
 # INSTALL:
@@ -14,6 +13,7 @@
 
 import streamlit as st
 import requests
+import re
 from urllib.parse import quote_plus
 
 # ============================================================
@@ -50,12 +50,23 @@ st.markdown("""
     margin-bottom: 30px;
 }
 
-.debug-box {
-    background: #fff3cd;
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 20px;
-    color: #856404;
+.result-card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
+}
+
+.price-box {
+    background: #dcfce7;
+    color: #166534;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 20px;
 }
 
 .footer {
@@ -78,7 +89,7 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">Find top medicine alternatives dynamically using Google Search + SerpAPI.</div>',
+    '<div class="subtitle">Find cheapest medicine prices dynamically using Google Search + SerpAPI.</div>',
     unsafe_allow_html=True
 )
 
@@ -121,7 +132,7 @@ def generate_purchase_links(medicine):
         "NetMeds":
         f"https://www.netmeds.com/catalogsearch/result/{med}",
 
-        "Apollo Pharmacy":
+        "Apollo":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
         "Amazon":
@@ -129,7 +140,21 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# SERPAPI SEARCH
+# PRICE EXTRACTION
+# ============================================================
+
+def extract_price(text):
+
+    prices = re.findall(r'₹\s?\d+|\$\s?\d+', text)
+
+    if prices:
+
+        return prices[0]
+
+    return "Price Not Found"
+
+# ============================================================
+# SEARCH FUNCTION
 # ============================================================
 
 def search_alternatives(
@@ -140,9 +165,10 @@ def search_alternatives(
     url = "https://serpapi.com/search.json"
 
     query = f"""
-    {medicine_name} generic alternative
-    same salt composition
-    lower price
+    cheapest {medicine_name}
+    generic alternative
+    medicine price
+    buy online
     """
 
     params = {
@@ -192,7 +218,7 @@ def search_alternatives(
             return []
 
         # ====================================================
-        # FETCH ONLY TOP 5 RESULTS
+        # FETCH TOP 5 RESULTS
         # ====================================================
 
         if "organic_results" in data:
@@ -209,10 +235,7 @@ def search_alternatives(
                     "No description available"
                 )
 
-                link = item.get(
-                    "link",
-                    "#"
-                )
+                price = extract_price(snippet)
 
                 alternatives.append({
 
@@ -220,7 +243,7 @@ def search_alternatives(
 
                     "snippet": snippet,
 
-                    "link": link
+                    "price": price
                 })
 
         return alternatives
@@ -240,7 +263,7 @@ medicine_name = st.text_input(
     placeholder="Example: Crocin, Calpol 650, Dolo 650"
 )
 
-search_btn = st.button("🔍 Find Alternatives")
+search_btn = st.button("💰 Find Best Price")
 
 # ============================================================
 # MAIN LOGIC
@@ -259,7 +282,7 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Fetching Top 5 Medicine Alternatives..."
+            "Finding cheapest medicine prices..."
         ):
 
             results = search_alternatives(
@@ -272,84 +295,85 @@ if search_btn:
         # ====================================================
 
         st.subheader(
-            f"💊 Top 5 Alternatives for '{medicine_name}'"
+            f"💊 Top 5 Best Price Results for '{medicine_name}'"
         )
 
         if not results:
 
             st.warning(
-                "No alternate medicines found."
+                "No medicine pricing results found."
             )
-
-            st.markdown("""
-            <div class="debug-box">
-
-            Possible reasons:
-
-            • Invalid SerpAPI key  
-            • Free plan exhausted  
-            • Google returned no organic results  
-            • Query returned limited data  
-
-            Try another medicine name.
-
-            </div>
-            """, unsafe_allow_html=True)
 
         else:
 
-            # ====================================================
-            # RESULTS LOOP
-            # ====================================================
-
             for idx, result in enumerate(results, start=1):
 
-                with st.container():
+                st.markdown(
+                    '<div class="result-card">',
+                    unsafe_allow_html=True
+                )
 
-                    st.markdown(
-                        f"## Alternative #{idx}"
-                    )
+                # ============================================
+                # MEDICINE INFO
+                # ============================================
 
-                    # ========================================
-                    # INFO
-                    # ========================================
+                st.markdown(
+                    f"## Alternative #{idx}"
+                )
 
-                    st.markdown("### Info")
-                    st.write(result['title'])
+                st.markdown("### 💊 Medicine")
+                st.write(result['title'])
 
-                    # ========================================
-                    # DETAILS
-                    # ========================================
+                # ============================================
+                # DETAILS
+                # ============================================
 
-                    st.markdown("### Details")
-                    st.write(result['snippet'])
+                st.markdown("### 📄 Details")
+                st.write(result['snippet'])
 
-                    # ========================================
-                    # PURCHASE LINKS
-                    # ========================================
+                # ============================================
+                # PRICE
+                # ============================================
 
-                    st.markdown("### 🛒 Purchase Links")
+                st.markdown("### 💰 Best Price")
 
-                    links = generate_purchase_links(
-                        medicine_name
-                    )
+                st.markdown(
+                    f"""
+                    <div class="price-box">
+                        {result['price']}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    cols = st.columns(3)
+                # ============================================
+                # PURCHASE LINKS
+                # ============================================
 
-                    i = 0
+                st.markdown("### 🛒 Purchase Links")
 
-                    for site, link in links.items():
+                links = generate_purchase_links(
+                    medicine_name
+                )
 
-                        with cols[i % 3]:
+                cols = st.columns(3)
 
-                            st.link_button(
-                                f"Buy on {site}",
-                                link
-                            )
+                i = 0
 
-                        i += 1
+                for site, link in links.items():
 
-                    st.divider()
+                    with cols[i % 3]:
+
+                        st.link_button(
+                            f"Buy on {site}",
+                            link
+                        )
+
+                    i += 1
+
+                st.markdown("</div>", unsafe_allow_html=True)
+
+                st.divider()
 
 # ============================================================
 # SIDEBAR FEATURES
@@ -359,13 +383,12 @@ st.sidebar.title("📌 Features")
 
 st.sidebar.info("""
 
-✅ Top 5 Alternatives  
+✅ Top 5 Cheapest Results  
 ✅ Runtime SerpAPI Key  
 ✅ Dynamic Google Search  
-✅ Medicine Substitute Search  
-✅ Clean Streamlit UI  
-✅ No Visible HTML Tags  
+✅ Medicine Price Extraction  
 ✅ Purchase Links  
+✅ Clean Streamlit UI  
 ✅ Responsive Layout  
 ✅ API Debug Response  
 
