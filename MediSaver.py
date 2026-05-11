@@ -89,7 +89,7 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">Find cheapest medicine prices dynamically using Google Search + SerpAPI.</div>',
+    '<div class="subtitle">Find cheapest medicine prices dynamically using MediSaver AI + Google .</div>',
     unsafe_allow_html=True
 )
 
