@@ -1,8 +1,7 @@
 # ============================================================
 # MediSaver.py
-# Working Dynamic Medicine Alternative Finder
-# Google Search Results + Purchase Links
-# Uses SerpAPI at Runtime
+# AI Medicine Alternative Finder
+# Google AI Search + SerpAPI + Purchase Links
 # ============================================================
 
 # INSTALL:
@@ -22,7 +21,7 @@ from urllib.parse import quote_plus
 # ============================================================
 
 st.set_page_config(
-    page_title="MediSaver",
+    page_title="MediSaver AI",
     page_icon="💊",
     layout="wide"
 )
@@ -70,12 +69,12 @@ st.markdown("""
     font-weight: 500;
 }
 
-.debug-box {
-    background: #fff3cd;
-    padding: 15px;
+.ai-box {
+    background: #eef6ff;
+    border-left: 6px solid #2563eb;
+    padding: 20px;
     border-radius: 12px;
-    margin-top: 20px;
-    color: #856404;
+    margin-bottom: 25px;
 }
 
 .footer {
@@ -93,12 +92,12 @@ st.markdown("""
 # ============================================================
 
 st.markdown(
-    '<div class="title">💊 MediSaver</div>',
+    '<div class="title">💊 MediSaver AI</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="subtitle">Find alternate medicines dynamically from Google Search using SerpAPI.</div>',
+    '<div class="subtitle">Find alternate medicines dynamically using Google AI Search + SerpAPI.</div>',
     unsafe_allow_html=True
 )
 
@@ -152,7 +151,7 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# SERPAPI GOOGLE SEARCH
+# GOOGLE AI SEARCH FUNCTION
 # ============================================================
 
 def search_alternatives(
@@ -162,8 +161,7 @@ def search_alternatives(
 
     url = "https://serpapi.com/search.json"
 
-    # Better query for medicine alternatives
-    query = f"{medicine_name} substitute"
+    query = f"{medicine_name} substitute medicine alternative"
 
     params = {
 
@@ -182,6 +180,7 @@ def search_alternatives(
         "gl": "us"
     }
 
+    ai_answer = None
     alternatives = []
 
     try:
@@ -190,12 +189,6 @@ def search_alternatives(
             url,
             params=params
         )
-
-        # ====================================================
-        # DEBUG STATUS
-        # ====================================================
-
-        st.write("HTTP Status:", response.status_code)
 
         data = response.json()
 
@@ -215,7 +208,32 @@ def search_alternatives(
 
             st.error(f"SerpAPI Error: {data['error']}")
 
-            return []
+            return None, []
+
+        # ====================================================
+        # AI / KNOWLEDGE GRAPH / ANSWER BOX
+        # ====================================================
+
+        if "answer_box" in data:
+
+            answer_box = data["answer_box"]
+
+            ai_answer = answer_box.get(
+                "snippet",
+                answer_box.get(
+                    "answer",
+                    "No AI summary available."
+                )
+            )
+
+        elif "knowledge_graph" in data:
+
+            knowledge_graph = data["knowledge_graph"]
+
+            ai_answer = knowledge_graph.get(
+                "description",
+                "No AI summary available."
+            )
 
         # ====================================================
         # ORGANIC RESULTS
@@ -225,14 +243,20 @@ def search_alternatives(
 
             for item in data["organic_results"]:
 
-                title = item.get("title", "No Title")
+                title = item.get(
+                    "title",
+                    "No Title"
+                )
 
                 snippet = item.get(
                     "snippet",
                     "No description available"
                 )
 
-                link = item.get("link", "#")
+                link = item.get(
+                    "link",
+                    "#"
+                )
 
                 alternatives.append({
 
@@ -243,13 +267,13 @@ def search_alternatives(
                     "link": link
                 })
 
-        return alternatives
+        return ai_answer, alternatives
 
     except Exception as e:
 
         st.error(f"Search Error: {e}")
 
-        return []
+        return None, []
 
 # ============================================================
 # USER INPUT
@@ -279,40 +303,41 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Searching Google for alternate medicines..."
+            "Searching Google AI for alternate medicines..."
         ):
 
-            results = search_alternatives(
+            ai_summary, results = search_alternatives(
                 medicine_name,
                 SERP_API_KEY
             )
 
         # ====================================================
-        # RESULTS
+        # AI SUMMARY
         # ====================================================
 
-        st.subheader("💊 Google Search Results")
+        if ai_summary:
+
+            st.subheader("🤖 AI Search Summary")
+
+            st.markdown(f"""
+            <div class="ai-box">
+
+            {ai_summary}
+
+            </div>
+            """, unsafe_allow_html=True)
+
+        # ====================================================
+        # AI SEARCH RESULTS
+        # ====================================================
+
+        st.subheader("🤖 AI Search Results")
 
         if not results:
 
             st.warning(
                 "No alternate medicines found."
             )
-
-            st.markdown("""
-            <div class="debug-box">
-
-            Possible reasons:
-
-            • Invalid SerpAPI key  
-            • Free plan exhausted  
-            • Google returned no organic results  
-            • Query returned limited data  
-
-            Try another medicine name.
-
-            </div>
-            """, unsafe_allow_html=True)
 
         else:
 
@@ -329,7 +354,7 @@ if search_btn:
                        href="{result['link']}"
                        target="_blank">
 
-                       🔍 Open Google Result
+                       🔍 Open Source
 
                     </a>
 
@@ -369,15 +394,15 @@ st.sidebar.title("📌 Features")
 st.sidebar.info("""
 
 ✅ Runtime SerpAPI Key  
-✅ Dynamic Google Search  
+✅ Google AI Search  
+✅ AI Summary  
+✅ AI Search Results  
 ✅ Live Google Results  
 ✅ Medicine Substitute Search  
 ✅ 1mg Links  
 ✅ PharmEasy Links  
 ✅ Truemeds Links  
-✅ Google Shopping Links  
 ✅ Streamlit Frontend UI  
-✅ API Debug Response  
 
 """)
 
