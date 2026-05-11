@@ -291,7 +291,7 @@ if search_btn:
         # RESULTS
         # ====================================================
 
-        st.subheader("💊 Google Search Results")
+        st.subheader("💊 AI Search Results for cheaper alternates")
 
         if not results:
 
