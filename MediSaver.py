@@ -1,8 +1,7 @@
 # ============================================================
 # MediSaver.py
-# Clean Streamlit Native UI Version
-# Purchase Links After Details
-# No Open Source Button
+# Top 5 Medicine Alternatives Finder
+# Clean Streamlit Native UI
 # ============================================================
 
 # INSTALL:
@@ -42,6 +41,7 @@ st.markdown("""
     font-size: 52px;
     font-weight: bold;
     color: #0f172a;
+    margin-bottom: 10px;
 }
 
 .subtitle {
@@ -78,7 +78,7 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">Find alternate medicines dynamically from Google Search using SerpAPI.</div>',
+    '<div class="subtitle">Find top medicine alternatives dynamically using Google Search + SerpAPI.</div>',
     unsafe_allow_html=True
 )
 
@@ -124,15 +124,12 @@ def generate_purchase_links(medicine):
         "Apollo Pharmacy":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
-        "Google Shopping":
-        f"https://www.google.com/search?tbm=shop&q={med}",
-
         "Amazon":
         f"https://www.amazon.in/s?k={med}+medicine"
     }
 
 # ============================================================
-# SERPAPI GOOGLE SEARCH
+# SERPAPI SEARCH
 # ============================================================
 
 def search_alternatives(
@@ -156,7 +153,7 @@ def search_alternatives(
 
         "api_key": api_key,
 
-        "num": 10,
+        "num": 5,
 
         "google_domain": "google.com",
 
@@ -173,8 +170,6 @@ def search_alternatives(
             url,
             params=params
         )
-
-        st.write("HTTP Status:", response.status_code)
 
         data = response.json()
 
@@ -197,21 +192,27 @@ def search_alternatives(
             return []
 
         # ====================================================
-        # ORGANIC RESULTS
+        # FETCH ONLY TOP 5 RESULTS
         # ====================================================
 
         if "organic_results" in data:
 
-            for item in data["organic_results"]:
+            for item in data["organic_results"][:5]:
 
-                title = item.get("title", "No Title")
+                title = item.get(
+                    "title",
+                    "No Title"
+                )
 
                 snippet = item.get(
                     "snippet",
                     "No description available"
                 )
 
-                link = item.get("link", "#")
+                link = item.get(
+                    "link",
+                    "#"
+                )
 
                 alternatives.append({
 
@@ -236,7 +237,7 @@ def search_alternatives(
 
 medicine_name = st.text_input(
     "Enter Medicine Name",
-    placeholder="Example: Calpol 650"
+    placeholder="Example: Crocin, Calpol 650, Dolo 650"
 )
 
 search_btn = st.button("🔍 Find Alternatives")
@@ -258,7 +259,7 @@ if search_btn:
     else:
 
         with st.spinner(
-            "Searching Google for alternate medicines..."
+            "Fetching Top 5 Medicine Alternatives..."
         ):
 
             results = search_alternatives(
@@ -270,7 +271,9 @@ if search_btn:
         # RESULTS
         # ====================================================
 
-        st.subheader("💊 AI Engine Search Results")
+        st.subheader(
+            f"💊 Top 5 Alternatives for '{medicine_name}'"
+        )
 
         if not results:
 
@@ -299,29 +302,33 @@ if search_btn:
             # RESULTS LOOP
             # ====================================================
 
-            for result in results:
+            for idx, result in enumerate(results, start=1):
 
                 with st.container():
 
-                    # ============================================
-                    # INFO
-                    # ============================================
+                    st.markdown(
+                        f"## Alternative #{idx}"
+                    )
 
-                    st.markdown("## Info")
+                    # ========================================
+                    # INFO
+                    # ========================================
+
+                    st.markdown("### Info")
                     st.write(result['title'])
 
-                    # ============================================
+                    # ========================================
                     # DETAILS
-                    # ============================================
+                    # ========================================
 
-                    st.markdown("## Details")
+                    st.markdown("### Details")
                     st.write(result['snippet'])
 
-                    # ============================================
+                    # ========================================
                     # PURCHASE LINKS
-                    # ============================================
+                    # ========================================
 
-                    st.markdown("## 🛒 Purchase Links")
+                    st.markdown("### 🛒 Purchase Links")
 
                     links = generate_purchase_links(
                         medicine_name
@@ -352,13 +359,13 @@ st.sidebar.title("📌 Features")
 
 st.sidebar.info("""
 
+✅ Top 5 Alternatives  
 ✅ Runtime SerpAPI Key  
 ✅ Dynamic Google Search  
-✅ Live Google Results  
-✅ Generic Alternative Search  
-✅ Clean Streamlit Native UI  
+✅ Medicine Substitute Search  
+✅ Clean Streamlit UI  
 ✅ No Visible HTML Tags  
-✅ Purchase Links Below Details  
+✅ Purchase Links  
 ✅ Responsive Layout  
 ✅ API Debug Response  
 
