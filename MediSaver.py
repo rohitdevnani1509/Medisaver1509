@@ -1,12 +1,11 @@
 # ============================================================
 # MediSaver.py
-# Working Dynamic Medicine Alternative Finder
-# Google Search Results + Purchase Links
-# Uses SerpAPI at Runtime
+# Improved Frontend Version
+# Clean UI with Info + Details
 # ============================================================
 
 # INSTALL:
-# pip install -r requirements.txt
+# pip install streamlit requests
 
 # RUN:
 # streamlit run MediSaver.py
@@ -68,6 +67,18 @@ st.markdown("""
     margin-top: 10px;
     margin-right: 10px;
     font-weight: 500;
+}
+
+.info-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.details-text {
+    color: #475569;
+    line-height: 1.7;
 }
 
 .debug-box {
@@ -162,8 +173,12 @@ def search_alternatives(
 
     url = "https://serpapi.com/search.json"
 
-    # Better query for medicine alternatives
-    query = f"{medicine_name} substitute"
+    # Improved query
+    query = f"""
+    {medicine_name} generic alternative
+    same salt composition
+    lower price
+    """
 
     params = {
 
@@ -179,7 +194,7 @@ def search_alternatives(
 
         "hl": "en",
 
-        "gl": "us"
+        "gl": "in"
     }
 
     alternatives = []
@@ -190,10 +205,6 @@ def search_alternatives(
             url,
             params=params
         )
-
-        # ====================================================
-        # DEBUG STATUS
-        # ====================================================
 
         st.write("HTTP Status:", response.status_code)
 
@@ -316,49 +327,59 @@ if search_btn:
 
         else:
 
+            # ====================================================
+            # PURCHASE LINKS OUTSIDE LOOP
+            # ====================================================
+
+            st.subheader("🛒 Purchase Links")
+
+            links = generate_purchase_links(
+                medicine_name
+            )
+
+            for site, link in links.items():
+
+                st.markdown(f"""
+                <a class="buy-btn"
+                   href="{link}"
+                   target="_blank">
+
+                   Buy on {site}
+
+                </a>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<br><br>", unsafe_allow_html=True)
+
+            # ====================================================
+            # RESULTS LOOP
+            # ====================================================
+
             for result in results:
 
                 st.markdown(f"""
                 <div class="card">
 
-                    <h2>{result['title']}</h2>
+                    <div class="info-title">
+                        Info
+                    </div>
 
-                    <p>{result['snippet']}</p>
+                    <div>
+                        {result['title']}
+                    </div>
 
-                    <a class="buy-btn"
-                       href="{result['link']}"
-                       target="_blank">
+                    <br>
 
-                       🔍 Open Google Result
+                    <div class="info-title">
+                        Details
+                    </div>
 
-                    </a>
+                    <div class="details-text">
+                        {result['snippet']}
+                    </div>
 
                 </div>
                 """, unsafe_allow_html=True)
-
-                # =============================================
-                # PURCHASE LINKS
-                # =============================================
-
-                st.markdown("### 🛒 Purchase Links")
-
-                links = generate_purchase_links(
-                    medicine_name
-                )
-
-                for site, link in links.items():
-
-                    st.markdown(f"""
-                    <a class="buy-btn"
-                       href="{link}"
-                       target="_blank">
-
-                       Buy on {site}
-
-                    </a>
-                    """, unsafe_allow_html=True)
-
-                st.markdown("<hr>", unsafe_allow_html=True)
 
 # ============================================================
 # SIDEBAR FEATURES
@@ -371,12 +392,11 @@ st.sidebar.info("""
 ✅ Runtime SerpAPI Key  
 ✅ Dynamic Google Search  
 ✅ Live Google Results  
-✅ Medicine Substitute Search  
-✅ 1mg Links  
-✅ PharmEasy Links  
-✅ Truemeds Links  
-✅ Google Shopping Links  
-✅ Streamlit Frontend UI  
+✅ Generic Alternative Search  
+✅ Clean Frontend UI  
+✅ Info + Details Layout  
+✅ Purchase Links  
+✅ Streamlit UI  
 ✅ API Debug Response  
 
 """)
