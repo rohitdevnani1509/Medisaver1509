@@ -1,11 +1,13 @@
 # ============================================================
 # MediSaver.py
-# AI Medicine Alternative Finder
-# Google Search + Runtime SerpAPI Key Input
+# Working Streamlit App
+# Medicine Alternatives + Purchase Links from Google
+# Runtime SerpAPI Key Input
+# No serpapi SDK required
 # ============================================================
 
 # INSTALL:
-# pip install streamlit google-search-results requests pandas
+# pip install streamlit requests pandas
 
 # RUN:
 # streamlit run MediSaver.py
@@ -13,17 +15,8 @@
 # ============================================================
 
 import streamlit as st
-import pandas as pd
 import requests
-
-# ============================================================
-# FIXED SERPAPI IMPORT
-# ============================================================
-
-try:
-    from serpapi.google_search import GoogleSearch
-except:
-    from serpapi import GoogleSearch
+import pandas as pd
 
 # ============================================================
 # PAGE CONFIG
@@ -105,7 +98,7 @@ st.markdown(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("🔑 Runtime SerpAPI Key")
+st.sidebar.title("🔑 SerpAPI Key")
 
 SERP_API_KEY = st.sidebar.text_input(
     "Enter SerpAPI Key",
@@ -119,10 +112,12 @@ https://serpapi.com/users/sign_up
 """)
 
 # ============================================================
-# GOOGLE SEARCH FUNCTION
+# SEARCH FUNCTION
 # ============================================================
 
 def search_alternative_medicines(medicine_name, api_key):
+
+    url = "https://serpapi.com/search.json"
 
     query = f"{medicine_name} alternative medicine generic substitute"
 
@@ -139,15 +134,22 @@ def search_alternative_medicines(medicine_name, api_key):
 
     try:
 
-        search = GoogleSearch(params)
+        response = requests.get(
+            url,
+            params=params
+        )
 
-        results = search.get_dict()
+        data = response.json()
 
         medicines = []
 
-        if "organic_results" in results:
+        # ====================================================
+        # ORGANIC RESULTS
+        # ====================================================
 
-            for item in results["organic_results"]:
+        if "organic_results" in data:
+
+            for item in data["organic_results"]:
 
                 medicines.append({
 
@@ -165,7 +167,7 @@ def search_alternative_medicines(medicine_name, api_key):
 
     except Exception as e:
 
-        st.error(f"Google Search Error: {e}")
+        st.error(f"Search Error: {e}")
 
         return []
 
@@ -186,7 +188,7 @@ def generate_purchase_links(medicine):
         "Google Shopping":
         f"https://www.google.com/search?tbm=shop&q={med}+medicine",
 
-        # INDIA PHARMACY LINKS
+        # INDIA
         "1mg":
         f"https://www.1mg.com/search/all?name={med}",
 
@@ -199,7 +201,7 @@ def generate_purchase_links(medicine):
         "Apollo Pharmacy":
         f"https://www.apollopharmacy.in/search-medicines/{med}",
 
-        # GLOBAL LINKS
+        # GLOBAL
         "Amazon":
         f"https://www.amazon.in/s?k={med}+medicine",
 
@@ -214,7 +216,7 @@ def generate_purchase_links(medicine):
     }
 
 # ============================================================
-# SEARCH BOX
+# SEARCH INPUT
 # ============================================================
 
 medicine_name = st.text_input(
@@ -240,7 +242,9 @@ if search_btn:
 
     else:
 
-        with st.spinner("Searching Google for alternative medicines..."):
+        with st.spinner(
+            "Searching Google for alternative medicines..."
+        ):
 
             alternatives = search_alternative_medicines(
                 medicine_name,
@@ -251,7 +255,7 @@ if search_btn:
         # DISPLAY RESULTS
         # ====================================================
 
-        st.subheader("💊 Alternative Medicines Found")
+        st.subheader("💊 Alternative Medicines")
 
         if not alternatives:
 
@@ -259,17 +263,17 @@ if search_btn:
 
         else:
 
-            for item in alternatives:
+            for medicine in alternatives:
 
                 st.markdown(f"""
                 <div class="card">
 
-                    <h2>{item['title']}</h2>
+                    <h2>{medicine['title']}</h2>
 
-                    <p>{item['snippet']}</p>
+                    <p>{medicine['snippet']}</p>
 
                     <a class="buy-btn"
-                       href="{item['link']}"
+                       href="{medicine['link']}"
                        target="_blank">
 
                        🔍 Open Google Result
@@ -283,7 +287,7 @@ if search_btn:
                 # PURCHASE LINKS
                 # ============================================
 
-                st.markdown("### 🛒 Buy / Search Online")
+                st.markdown("### 🛒 Purchase Links")
 
                 purchase_links = generate_purchase_links(
                     medicine_name
@@ -312,10 +316,10 @@ st.sidebar.title("📌 Features")
 st.sidebar.info("""
 
 ✅ Runtime SerpAPI Key Input  
-✅ Dynamic Google Search  
-✅ Alternative Medicine Detection  
+✅ Google Search Integration  
+✅ Alternative Medicine Search  
 ✅ Purchase Links  
-✅ Google Shopping Integration  
+✅ Google Shopping Links  
 ✅ Streamlit Frontend UI  
 
 """)
