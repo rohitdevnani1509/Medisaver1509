@@ -1,6 +1,6 @@
 # ============================================================
 # MediSaver.py
-# Best Medicine Price Finder using SerpAPI + Streamlit
+# AI Medicine Best Price Finder
 # ============================================================
 
 # INSTALL:
@@ -306,7 +306,7 @@ if search_btn:
 
         else:
 
-            for idx, result in enumerate(results, start=1):
+            for result in results:
 
                 st.markdown(
                     '<div class="result-card">',
@@ -314,12 +314,16 @@ if search_btn:
                 )
 
                 # ============================================
-                # MEDICINE INFO
+                # AI INFO TITLE
                 # ============================================
 
                 st.markdown(
-                    f"## Alternative #{idx}"
+                    "## 🤖 AI Info of Input Medicine"
                 )
+
+                # ============================================
+                # MEDICINE INFO
+                # ============================================
 
                 st.markdown("### 💊 Medicine")
                 st.write(result['title'])
@@ -371,7 +375,10 @@ if search_btn:
 
                     i += 1
 
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
+                )
 
                 st.divider()
 
