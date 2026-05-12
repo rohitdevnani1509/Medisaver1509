@@ -77,22 +77,66 @@ st.markdown("""
     padding: 20px;
 }
 
+.consult-btn {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.consult-btn a {
+    text-decoration: none;
+    width: 100%;
+}
+
+.consult-btn button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.3s;
+}
+
+.consult-btn button:hover {
+    background-color: #1d4ed8;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# HEADER
+# HEADER WITH CONSULT DOCTOR BUTTON
 # ============================================================
 
-st.markdown(
-    '<div class="title">💊 MediSaver AI (Affordable Alternates)</div>',
-    unsafe_allow_html=True
-)
+col1, col2 = st.columns([6, 1.5])
 
-st.markdown(
-    '<div class="subtitle">Find cheapest medicine prices dynamically using Google Search + SerpAPI.</div>',
-    unsafe_allow_html=True
-)
+with col1:
+
+    st.markdown(
+        '<div class="title">💊 MediSaver AI (Affordable Alternates)</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="subtitle">Find cheapest medicine prices dynamically using Google Search + SerpAPI.</div>',
+        unsafe_allow_html=True
+    )
+
+with col2:
+
+    st.markdown("""
+    <div class="consult-btn" style="margin-top:25px;">
+        <a href="https://www.practo.com/" target="_blank">
+            <button>
+                👨‍⚕️ Consult Doctor
+            </button>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ============================================================
 # SIDEBAR
@@ -397,6 +441,7 @@ st.sidebar.info("""
 ✅ AI Info for Input Medicine  
 ✅ Medicine Price Extraction  
 ✅ Purchase Links  
+✅ Consult Doctor Button  
 ✅ Clean Streamlit UI  
 ✅ Responsive Layout  
 
