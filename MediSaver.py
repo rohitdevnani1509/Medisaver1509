@@ -1,6 +1,7 @@
 # ============================================================
 # MediSaver.py
 # AI Medicine Best Price Finder
+# Clean Production UI Version
 # ============================================================
 
 # INSTALL:
@@ -84,12 +85,12 @@ st.markdown("""
 # ============================================================
 
 st.markdown(
-    '<div class="title">💊 MediSaver AI (Best Price and Alternates)</div>',
+    '<div class="title">💊 MediSaver AI (Affordable Alternates)</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="subtitle">Find cheapest medicine prices dynamically using MediSaver AI + Google .</div>',
+    '<div class="subtitle">Find cheapest medicine prices dynamically using Google Search + SerpAPI.</div>',
     unsafe_allow_html=True
 )
 
@@ -198,14 +199,6 @@ def search_alternatives(
         )
 
         data = response.json()
-
-        # ====================================================
-        # DEBUG RESPONSE
-        # ====================================================
-
-        with st.expander("🔍 Debug API Response"):
-
-            st.json(data)
 
         # ====================================================
         # HANDLE API ERRORS
@@ -406,7 +399,6 @@ st.sidebar.info("""
 ✅ Purchase Links  
 ✅ Clean Streamlit UI  
 ✅ Responsive Layout  
-✅ API Debug Response  
 
 """)
 
