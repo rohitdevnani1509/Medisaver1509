@@ -130,7 +130,7 @@ with col2:
 
     st.markdown("""
     <div class="consult-btn" style="margin-top:25px;">
-        <a href="https://www.practo.com/" target="_blank">
+        <a href="https://www.practo.com/consult/" target="_blank">
             <button>
                 👨‍⚕️ Consult Doctor
             </button>
